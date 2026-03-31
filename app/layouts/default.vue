@@ -1,24 +1,10 @@
 <script setup lang="ts">
 import { useConfigStore } from '~/stores/config'
 import { useChatStore } from '~/stores/chat'
-import { useMaskStore } from '~/stores/mask'
-import { useAccessStore } from '~/stores/access'
 
 const configStore = useConfigStore()
 const chatStore = useChatStore()
-const maskStore = useMaskStore()
-const accessStore = useAccessStore()
-
-// Load all stores from IndexedDB on startup
-onMounted(async () => {
-  await Promise.all([
-    configStore.load(),
-    chatStore.load(),
-    maskStore.load(),
-    accessStore.load(),
-  ])
-  configStore.setTheme(configStore.theme) // Apply saved theme
-})
+// store-init.client.ts 插件已在首次渲染前完成 IDB 加载，此处无需重复 load
 
 const isMobile = useMediaQuery('(max-width: 768px)')
 const sidebarOpen = ref(true)

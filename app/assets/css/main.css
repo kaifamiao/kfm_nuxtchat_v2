@@ -3,13 +3,22 @@
 @theme {
   --color-primary: #10a37f;
   --color-primary-hover: #0d8c6d;
-  --color-primary-light: rgba(16, 163, 127, 0.1);
+  --color-primary-light: rgba(16, 163, 127, 0.12);
 
+  /* 主内容区 */
   --color-bg: #ffffff;
   --color-bg-secondary: #f7f7f8;
   --color-bg-tertiary: #ececf1;
-  --color-sidebar: #202123;
-  --color-sidebar-hover: #2a2b2d;
+
+  /* 侧边栏（亮色模式：浅灰，与 NextChat 原版一致） */
+  --color-sidebar: #f7f7f8;
+  --color-sidebar-border: #e5e5e5;
+  --color-sidebar-hover: #ebebeb;
+  --color-sidebar-active: #e0e0e0;
+  --color-sidebar-text: #343541;
+  --color-sidebar-text-sub: #6e6e80;
+  --color-sidebar-text-muted: #9999aa;
+  --color-sidebar-icon: #6e6e80;
 
   --color-text: #343541;
   --color-text-secondary: #6e6e80;
@@ -18,7 +27,6 @@
   --color-border: #e5e5e5;
   --color-border-dark: #d1d1d1;
 
-  --color-user-bubble: #10a37f;
   --color-assistant-bubble: #f7f7f8;
 
   --color-danger: #ef4444;
@@ -35,27 +43,34 @@
   --header-height: 52px;
   --input-height: 52px;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.14);
 }
 
-/* Dark mode via [data-theme="dark"] */
+/* 深色模式：侧边栏改为深色 */
 [data-theme="dark"] {
-  --color-bg: #202123;
-  --color-bg-secondary: #343541;
-  --color-bg-tertiary: #444654;
-  --color-sidebar: #202123;
-  --color-sidebar-hover: #2a2b2d;
+  --color-bg: #212121;
+  --color-bg-secondary: #2f2f2f;
+  --color-bg-tertiary: #424242;
+
+  --color-sidebar: #171717;
+  --color-sidebar-border: rgba(255,255,255,0.06);
+  --color-sidebar-hover: #2a2a2a;
+  --color-sidebar-active: #333333;
+  --color-sidebar-text: #ececf1;
+  --color-sidebar-text-sub: #c5c5d2;
+  --color-sidebar-text-muted: #8e8ea0;
+  --color-sidebar-icon: #8e8ea0;
 
   --color-text: #ececf1;
   --color-text-secondary: #c5c5d2;
   --color-text-muted: #8e8ea0;
 
-  --color-border: #4e4f60;
-  --color-border-dark: #6e6e80;
+  --color-border: #3a3a3a;
+  --color-border-dark: #555555;
 
-  --color-assistant-bubble: #444654;
+  --color-assistant-bubble: #2f2f2f;
 }
 
 /* Base resets */
@@ -75,6 +90,9 @@ html, body {
   background: var(--color-bg);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* Sidebar search placeholder */
+.sidebar-search::placeholder { color: var(--color-sidebar-text-muted); }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

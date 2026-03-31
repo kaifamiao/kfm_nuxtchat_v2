@@ -30,6 +30,13 @@ function deleteSession(id: string, e: Event) {
   e.stopPropagation()
   if (confirm('确认删除此对话？')) chatStore.deleteSession(id)
 }
+const bottomNav = [
+  { icon: 'mask',     title: '提示词模板', action: () => { showMask.value = true } },
+  { icon: 'plugin',   title: '插件',       action: () => router.push('/plugin') },
+  { icon: 'mcp',      title: 'MCP 工具',   action: () => router.push('/mcp') },
+  { icon: 'settings', title: '设置',       action: () => { showSettings.value = true } },
+]
+
 function formatTime(ms: number) {
   const date = new Date(ms)
   const now = new Date()
@@ -42,30 +49,24 @@ function formatTime(ms: number) {
 </script>
 
 <template>
-  <aside
-    class="flex flex-col bg-(--color-sidebar) text-gray-100 shrink-0"
-    :style="{ width: `${configStore.sidebarWidth}px` }"
-  >
+  <aside class="sidebar flex flex-col shrink-0" :style="{ width: `${configStore.sidebarWidth}px` }">
+
     <!-- Logo & New Chat -->
-    <div class="flex items-center gap-2 px-3 py-4 border-b border-white/10">
-      <AppIcon name="logo" :size="24" color="white" class="shrink-0" />
-      <span class="font-bold text-sm flex-1 truncate">NuxtChat</span>
-      <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-        title="新建对话"
-        @click="newChat"
-      >
-        <AppIcon name="add" :size="16" color="white" />
+    <div class="sidebar-header flex items-center gap-2 px-3 py-4">
+      <AppIcon name="logo" :size="22" class="shrink-0 text-primary" />
+      <span class="font-bold text-sm flex-1 truncate sidebar-text">NuxtChat</span>
+      <button class="sidebar-icon-btn" title="新建对话" @click="newChat">
+        <AppIcon name="add" :size="16" />
       </button>
     </div>
 
     <!-- Search -->
-    <div class="px-3 py-2">
-      <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 h-8">
-        <AppIcon name="prompt" :size="12" color="rgba(255,255,255,0.6)" />
+    <div class="px-3 pb-2">
+      <div class="sidebar-search-box flex items-center gap-2 px-3 h-8 rounded-lg">
+        <AppIcon name="prompt" :size="12" class="sidebar-text-muted" />
         <input
           v-model="searchText"
-          class="flex-1 bg-transparent text-xs text-white placeholder-white/50 outline-none"
+          class="sidebar-search-input flex-1 bg-transparent text-xs outline-none"
           placeholder="搜索对话..."
         />
       </div>
@@ -76,72 +77,125 @@ function formatTime(ms: number) {
       <div
         v-for="session in filteredSessions"
         :key="session.id"
-        class="group flex items-start gap-2 px-3 py-3 rounded-xl cursor-pointer mb-1 transition-colors"
-        :class="session.id === chatStore.currentSessionId
-          ? 'bg-white/20'
-          : 'hover:bg-white/10'"
+        class="session-item group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer mb-0.5"
+        :class="{ 'is-active': session.id === chatStore.currentSessionId }"
         @click="selectSession(session.id)"
       >
-        <div class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
-          <AppIcon :name="session.mask.avatar" :size="14" color="rgba(255,255,255,0.85)" />
+        <!-- Avatar -->
+        <div class="session-avatar w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+          <AppIcon :name="session.mask.avatar" :size="14" class="text-primary" />
         </div>
+
+        <!-- Text -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between gap-1">
-            <span class="text-xs font-medium text-white truncate">{{ session.topic }}</span>
-            <span class="text-[10px] text-white/40 shrink-0">{{ formatTime(session.lastUpdate) }}</span>
+            <span class="text-xs font-medium truncate sidebar-text">{{ session.topic }}</span>
+            <span class="text-[10px] sidebar-text-muted shrink-0">{{ formatTime(session.lastUpdate) }}</span>
           </div>
-          <p class="text-[11px] text-white/50 truncate mt-0.5">
-            {{ session.messages.at(-1) ? (typeof session.messages.at(-1)!.content === 'string' ? session.messages.at(-1)!.content : '…') : '还没有消息' }}
+          <p class="text-[11px] truncate mt-0.5 sidebar-text-sub">
+            {{ session.messages.at(-1)
+              ? (typeof session.messages.at(-1)!.content === 'string'
+                  ? session.messages.at(-1)!.content : '…')
+              : '还没有消息' }}
           </p>
         </div>
+
+        <!-- Delete -->
         <button
-          class="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded hover:bg-red-500/30 transition-all shrink-0"
-          @click="deleteSession(session.id, $event)"
+          class="delete-btn opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-md transition-opacity shrink-0"
+          @click.stop="deleteSession(session.id, $event)"
         >
-          <AppIcon name="delete" :size="12" color="rgba(255,255,255,0.6)" />
+          <AppIcon name="delete" :size="12" />
         </button>
       </div>
 
-      <div v-if="!filteredSessions.length" class="text-center py-8 text-white/30 text-xs">
+      <div v-if="!filteredSessions.length" class="text-center py-8 text-xs sidebar-text-muted">
         {{ searchText ? '没有匹配的对话' : '还没有对话，点击 + 开始' }}
       </div>
     </div>
 
     <!-- Bottom nav -->
-    <div class="flex items-center justify-between px-3 py-3 border-t border-white/10">
+    <div class="sidebar-footer flex items-center justify-between px-3 py-3">
       <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-        title="提示词模板"
-        @click="showMask = true"
+        v-for="btn in bottomNav" :key="btn.icon"
+        class="sidebar-icon-btn"
+        :title="btn.title"
+        @click="btn.action"
       >
-        <AppIcon name="mask" :size="16" color="rgba(255,255,255,0.7)" />
-      </button>
-      <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-        title="插件"
-        @click="() => router.push('/plugin')"
-      >
-        <AppIcon name="plugin" :size="16" color="rgba(255,255,255,0.7)" />
-      </button>
-      <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-        title="MCP 工具"
-        @click="() => router.push('/mcp')"
-      >
-        <AppIcon name="mcp" :size="16" color="rgba(255,255,255,0.7)" />
-      </button>
-      <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-        title="设置"
-        @click="showSettings = true"
-      >
-        <AppIcon name="settings" :size="16" color="rgba(255,255,255,0.7)" />
+        <AppIcon :name="btn.icon" :size="16" />
       </button>
     </div>
+
   </aside>
 
-  <!-- Settings Modal -->
   <SettingsModal v-model="showSettings" />
-  <!-- Mask Gallery Modal -->
   <MaskGallery v-model="showMask" />
 </template>
+
+<style scoped>
+/* ── 侧边栏容器 ── */
+.sidebar {
+  background: var(--color-sidebar);
+  border-right: 1px solid var(--color-sidebar-border);
+}
+
+/* ── 分割线 ── */
+.sidebar-header {
+  border-bottom: 1px solid var(--color-sidebar-border);
+}
+.sidebar-footer {
+  border-top: 1px solid var(--color-sidebar-border);
+}
+
+/* ── 文字颜色 ── */
+.sidebar-text        { color: var(--color-sidebar-text); }
+.sidebar-text-sub    { color: var(--color-sidebar-text-sub); }
+.sidebar-text-muted  { color: var(--color-sidebar-text-muted); }
+.text-primary        { color: var(--color-primary); }
+
+/* ── 搜索框 ── */
+.sidebar-search-box { background: var(--color-sidebar-hover); }
+.sidebar-search-input { color: var(--color-sidebar-text); caret-color: var(--color-primary); }
+.sidebar-search-input::placeholder { color: var(--color-sidebar-text-muted); }
+
+/* ── 图标按钮（顶部新建 & 底部导航） ── */
+.sidebar-icon-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--color-sidebar-icon);
+  transition: background 0.15s ease;
+}
+.sidebar-icon-btn:hover {
+  background: var(--color-sidebar-hover);
+}
+
+/* ── 会话列表项 ── */
+.session-item {
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+.session-item:hover {
+  background: var(--color-sidebar-hover);
+}
+.session-item.is-active {
+  background: var(--color-sidebar-active);
+}
+
+/* ── 会话 avatar 背景 ── */
+.session-avatar {
+  background: var(--color-primary-light);
+}
+
+/* ── 删除按钮 ── */
+.delete-btn {
+  color: var(--color-sidebar-text-muted);
+}
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+</style>

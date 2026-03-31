@@ -28,10 +28,11 @@ export const db = {
 
   async set<T>(key: string, value: T): Promise<void> {
     if (!import.meta.client) return
-    // 串联到写队列，确保顺序写入
+    // 立即 JSON 快照，脱离 Vue Proxy，防止队列延迟执行时拿到已变更的引用
+    const snapshot = JSON.parse(JSON.stringify(value))
     writeQueue = writeQueue.then(async () => {
       try {
-        await set(key, value, customStore!)
+        await set(key, snapshot, customStore!)
       } catch (e) {
         console.error('[db] set error:', e)
       }
