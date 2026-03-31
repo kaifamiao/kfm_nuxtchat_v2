@@ -82,7 +82,9 @@ function formatTime(ms: number) {
           : 'hover:bg-white/10'"
         @click="selectSession(session.id)"
       >
-        <span class="text-lg shrink-0 mt-0.5">{{ session.mask.avatar }}</span>
+        <div class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+          <AppIcon :name="session.mask.avatar" :size="14" color="rgba(255,255,255,0.85)" />
+        </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between gap-1">
             <span class="text-xs font-medium text-white truncate">{{ session.topic }}</span>

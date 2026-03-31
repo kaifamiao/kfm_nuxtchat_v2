@@ -72,7 +72,9 @@ function deleteMask(id: string) {
       >
         <div class="flex items-start justify-between gap-2 mb-2">
           <div class="flex items-center gap-2">
-            <span class="text-2xl">{{ mask.avatar }}</span>
+            <div class="w-9 h-9 rounded-xl bg-(--color-bg-secondary) flex items-center justify-center shrink-0">
+              <AppIcon :name="mask.avatar" :size="18" class="text-(--color-primary)" />
+            </div>
             <div>
               <p class="text-sm font-semibold text-(--color-text) leading-tight">{{ mask.name }}</p>
               <p v-if="mask.builtin" class="text-[10px] text-(--color-text-muted)">内置</p>

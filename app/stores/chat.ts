@@ -6,7 +6,7 @@ import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/models'
 
 const DEFAULT_MASK: Mask = {
   id: 'default',
-  avatar: '🤖',
+  avatar: 'Bot',
   name: '新对话',
   context: [],
   modelConfig: {
@@ -111,11 +111,19 @@ export const useChatStore = defineStore('chat', {
       this.save()
     },
 
-    updateLastMessage(sessionId: string, updater: (msg: ChatMessage) => void) {
+    // 流式追加内容：只更新内存，不写 IndexedDB（高频调用安全）
+    appendStreamContent(sessionId: string, content: string) {
+      const session = this.sessions.find(s => s.id === sessionId)
+      if (!session || !session.messages.length) return
+      session.messages[session.messages.length - 1].content = content
+    },
+
+    // 最终更新消息并持久化（流式结束、错误、停止时调用）
+    async updateLastMessage(sessionId: string, updater: (msg: ChatMessage) => void) {
       const session = this.sessions.find(s => s.id === sessionId)
       if (!session || !session.messages.length) return
       updater(session.messages[session.messages.length - 1])
-      this.save()
+      await this.save()
     },
 
     deleteMessage(sessionId: string, messageId: string) {

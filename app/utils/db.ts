@@ -1,34 +1,42 @@
 /**
  * IndexedDB 持久化工具（基于 idb-keyval）
- * 用于替代 Next.js 的 localStorage + zustand/persist
+ * 写操作通过串行队列执行，避免并发写竞争导致数据丢失
  */
 import { get, set, del, entries, createStore } from 'idb-keyval'
 
 const DB_NAME = 'nuxtchat'
 const STORE_NAME = 'keyval'
 
-// 创建专属 store
+// 仅在客户端创建 IDB store
 const customStore = import.meta.client
   ? createStore(DB_NAME, STORE_NAME)
   : null
+
+// 串行写队列：确保同一 key 的写操作不会并发
+let writeQueue: Promise<void> = Promise.resolve()
 
 export const db = {
   async get<T>(key: string): Promise<T | undefined> {
     if (!import.meta.client) return undefined
     try {
       return await get<T>(key, customStore!)
-    } catch {
+    } catch (e) {
+      console.error('[db] get error:', e)
       return undefined
     }
   },
 
   async set<T>(key: string, value: T): Promise<void> {
     if (!import.meta.client) return
-    try {
-      await set(key, value, customStore!)
-    } catch (e) {
-      console.error('[db] set error:', e)
-    }
+    // 串联到写队列，确保顺序写入
+    writeQueue = writeQueue.then(async () => {
+      try {
+        await set(key, value, customStore!)
+      } catch (e) {
+        console.error('[db] set error:', e)
+      }
+    })
+    await writeQueue
   },
 
   async del(key: string): Promise<void> {

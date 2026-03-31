@@ -73,7 +73,7 @@ export function useChat() {
         throw new Error(`API Error ${resp.status}: ${err}`)
       }
 
-      // Stream parse
+      // Stream parse（只更新内存，不写 IDB）
       let fullText = ''
       const reader = resp.body?.getReader()
       if (!reader) throw new Error('No response body')
@@ -92,16 +92,15 @@ export function useChat() {
             const delta = parsed.choices?.[0]?.delta?.content || ''
             if (delta) {
               fullText += delta
-              chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
-                msg.content = fullText
-              })
+              // 仅更新内存，不触发 IDB 写入
+              chatStore.appendStreamContent(sid, fullText)
             }
           } catch {}
         }
       }
 
-      // Finalize message
-      chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
+      // 流式结束：一次性持久化最终状态
+      await chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
         msg.content = fullText || '(空响应)'
         msg.streaming = false
       })
@@ -112,11 +111,11 @@ export function useChat() {
       }
     } catch (e: any) {
       if (e.name === 'AbortError') {
-        chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
+        await chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
           msg.streaming = false
         })
       } else {
-        chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
+        await chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
           msg.content = `❌ ${e.message}`
           msg.isError = true
           msg.streaming = false

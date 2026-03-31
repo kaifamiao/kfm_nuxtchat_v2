@@ -1,5 +1,4 @@
 import tailwindcss from '@tailwindcss/vite'
-import svgLoader from 'vite-svg-loader'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -22,7 +21,6 @@ export default defineNuxtConfig({
   vite: {
     plugins: [
       tailwindcss(),
-      svgLoader({ svgo: false }),
     ],
   },
 

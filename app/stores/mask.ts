@@ -8,7 +8,7 @@ import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/models'
 const BUILTIN_MASKS: Mask[] = [
   {
     id: 'builtin-1',
-    avatar: '🤖',
+    avatar: 'Bot',
     name: 'AI 助手',
     builtin: true,
     context: [
@@ -23,7 +23,7 @@ const BUILTIN_MASKS: Mask[] = [
   },
   {
     id: 'builtin-2',
-    avatar: '👨‍💻',
+    avatar: 'Code2',
     name: '代码专家',
     builtin: true,
     context: [
@@ -38,7 +38,7 @@ const BUILTIN_MASKS: Mask[] = [
   },
   {
     id: 'builtin-3',
-    avatar: '📝',
+    avatar: 'PenLine',
     name: '写作助手',
     builtin: true,
     context: [
@@ -53,7 +53,7 @@ const BUILTIN_MASKS: Mask[] = [
   },
   {
     id: 'builtin-4',
-    avatar: '🌍',
+    avatar: 'Globe',
     name: '翻译专家',
     builtin: true,
     context: [
@@ -68,7 +68,7 @@ const BUILTIN_MASKS: Mask[] = [
   },
   {
     id: 'builtin-5',
-    avatar: '🔬',
+    avatar: 'FlaskConical',
     name: '学术研究助手',
     builtin: true,
     context: [
@@ -108,7 +108,7 @@ export const useMaskStore = defineStore('mask', {
     create(mask: Partial<Mask>): Mask {
       const newMask: Mask = {
         id: createId(),
-        avatar: '🤖',
+        avatar: 'Bot',
         name: '新建 Mask',
         context: [],
         modelConfig: { model: DEFAULT_MODEL, providerName: DEFAULT_PROVIDER },

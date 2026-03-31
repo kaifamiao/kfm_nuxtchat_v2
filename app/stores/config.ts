@@ -21,7 +21,7 @@ export interface AppConfig {
     voice: string
     speed: number
   }
-  // Emoji
+  // Lucide icon name used as default avatar
   defaultAvatar: string
 }
 
@@ -54,7 +54,7 @@ const DEFAULT_CONFIG: AppConfig = {
     voice: '',
     speed: 1.0,
   },
-  defaultAvatar: '🤖',
+  defaultAvatar: 'Bot',
 }
 
 export const useConfigStore = defineStore('config', {

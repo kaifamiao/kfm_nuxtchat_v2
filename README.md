@@ -25,7 +25,7 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 - **存储层**：IndexedDB（`idb-keyval`）本地优先，数据不经任何服务器
 - **状态管理**：Pinia（10 个 Store，对话/配置/模型选择/主题等全量托管）
 - **样式**：Tailwind CSS v4 + CSS 自定义属性（零 UI 框架依赖）
-- **图标**：完整沿用 NextChat 的 69 个原版 SVG 图标
+- **图标**：统一使用 [Lucide](https://lucide.dev)（`lucide-vue-next`），通过 `AppIcon` 统一封装，支持旧式别名向后兼容
 - **API 安全**：Nuxt Server Routes 服务端代理，API Key 永不暴露给浏览器
 
 ---
@@ -100,27 +100,38 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 
 ### 环境要求
 
-- Node.js ≥ 18
-- npm ≥ 9
+- [Bun](https://bun.sh) ≥ 1.3（推荐，安装速度比 npm 快 10x）
+- Node.js ≥ 18（运行时兼容）
+
+```bash
+# 安装 Bun（如未安装）
+curl -fsSL https://bun.sh/install | bash
+```
 
 ### 安装依赖
 
 ```bash
-npm install
+bun install
 ```
 
 ### 本地开发
 
 ```bash
-npm run dev
+bun run dev
 # 访问 http://localhost:3000
 ```
 
 ### 生产构建
 
 ```bash
-npm run build
-npm run preview
+bun run build
+bun run preview
+```
+
+### 类型检查
+
+```bash
+bun run typecheck
 ```
 
 ---
@@ -178,7 +189,7 @@ ENABLE_MCP=true
 | 安全渲染 | DOMPurify | `^3.3` |
 | 国际化 | @nuxtjs/i18n | `^10.2` |
 | 工具函数 | @vueuse/nuxt | `^14.2` |
-| SVG 图标 | vite-svg-loader | `^5.1` |
+| 图标库 | lucide-vue-next | `^1.0` |
 | 数学公式 | marked-katex-extension | `^5.1` |
 | 流程图 | mermaid | `^11.13` |
 
@@ -191,7 +202,7 @@ kfm_nuxtchat_v2/
 │   ├── app.vue                 # 根组件
 │   ├── assets/
 │   │   ├── css/main.css        # Tailwind v4 入口 + CSS 变量主题
-│   │   └── icons/              # 69 个 NextChat 原版 SVG 图标
+│   │   └── css/main.css        # （icons 目录已移除，改用 Lucide）
 │   ├── layouts/
 │   │   └── default.vue         # 主布局（侧边栏 + 内容区）
 │   ├── pages/
@@ -278,15 +289,18 @@ docker run -d \
   nuxtchat
 ```
 
-### 自托管（Node.js）
+### 自托管（Node.js / Bun）
 
 ```bash
 # 安装依赖 & 构建
-npm install
-npm run build
+bun install
+bun run build
 
-# 启动生产服务器
+# 用 Node 启动（推荐稳定环境）
 node .output/server/index.mjs
+
+# 或用 Bun 启动（更快）
+bun .output/server/index.mjs
 ```
 
 ---
@@ -298,7 +312,7 @@ node .output/server/index.mjs
 | Next.js 14 App Router | Nuxt 4 + Vue 3 |
 | Zustand + persist | Pinia + idb-keyval |
 | CSS Modules + CSS 变量 | Tailwind CSS v4 + CSS 变量 |
-| @svgr/webpack | vite-svg-loader |
+| @svgr/webpack | lucide-vue-next |
 | next/navigation | useRouter（Vue Router） |
 | API Routes（serverless） | Nuxt Server Routes（Nitro） |
 | React Server Components | Nuxt SSR |
