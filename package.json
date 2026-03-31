@@ -1,0 +1,33 @@
+{
+  "name": "kfm_nuxtchat_v2",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/i18n": "^10.2.4",
+    "@pinia/nuxt": "^0.11.3",
+    "@tailwindcss/vite": "^4.2.2",
+    "@vueuse/core": "^14.2.1",
+    "@vueuse/nuxt": "^14.2.1",
+    "dompurify": "^3.3.3",
+    "highlight.js": "^11.11.1",
+    "idb-keyval": "^6.2.2",
+    "marked": "^17.0.5",
+    "marked-katex-extension": "^5.1.7",
+    "mermaid": "^11.13.0",
+    "nuxt": "^4.4.2",
+    "openapi3-ts": "^4.5.0",
+    "pinia": "^3.0.4",
+    "tailwindcss": "^4.2.2",
+    "uuid": "^13.0.0",
+    "vite-svg-loader": "^5.1.1",
+    "vue": "^3.5.31",
+    "vue-router": "^5.0.4"
+  }
+}
