@@ -21,18 +21,22 @@ const DEFAULT_ACCESS: AccessConfig = {
   deepseekApiKey: '',
   moonshotUrl: 'https://api.moonshot.cn',
   moonshotApiKey: '',
-  alibabaUrl: 'https://dashscope.aliyuncs.com',
+  // 阿里云 DashScope OpenAI 兼容路径需含 /compatible-mode，代理再拼 /v1/...
+  alibabaUrl: 'https://dashscope.aliyuncs.com/compatible-mode',
   alibabaApiKey: '',
   xaiApiKey: '',
   xaiUrl: 'https://api.x.ai',
   siliconflowUrl: 'https://api.siliconflow.cn',
   siliconflowApiKey: '',
-  chatglmUrl: 'https://open.bigmodel.cn',
+  // ChatGLM OpenAI 兼容路径含 /api/paas/v4，代理再拼 /v1/ 时用特殊处理
+  chatglmUrl: 'https://open.bigmodel.cn/api/paas/v4',
   chatglmApiKey: '',
-  bytedanceUrl: 'https://ark.cn-beijing.volces.com',
+  // 豆包 Ark 兼容路径
+  bytedanceUrl: 'https://ark.cn-beijing.volces.com/api/v3',
   bytedanceApiKey: '',
   baiduUrl: 'https://aip.baidubce.com',
   baiduApiKey: '',
+  ollamaUrl: 'http://localhost:11434',
 }
 
 export const useAccessStore = defineStore('access', {
@@ -76,6 +80,7 @@ export const useAccessStore = defineStore('access', {
         ChatGLM: state.chatglmUrl,
         ByteDance: state.bytedanceUrl,
         Baidu: state.baiduUrl,
+        Ollama: state.ollamaUrl,
       }
       return map[provider] || ''
     },

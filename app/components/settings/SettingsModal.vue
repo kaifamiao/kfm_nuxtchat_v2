@@ -10,6 +10,8 @@ const emit = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 const configStore = useConfigStore()
 const accessStore = useAccessStore()
 const syncStore = useSyncStore()
+const { connected: ollamaConnected, loading: ollamaLoading, error: ollamaError,
+        models: ollamaModels, testConnection: testOllama } = useOllama()
 
 type Tab = 'general' | 'model' | 'access' | 'sync' | 'about'
 const activeTab = ref<Tab>('general')
@@ -97,7 +99,7 @@ async function syncFromWebDAV() {
             <div>
               <label class="block text-xs font-medium text-(--color-text-secondary) mb-2">字体大小：{{ configStore.fontSize }}px</label>
               <input type="range" min="12" max="20" :value="configStore.fontSize" class="w-full accent-(--color-primary)"
-                @input="configStore.fontSize = +($event.target as HTMLInputElement).value; configStore.save()" />
+                @input="configStore.setFontSize(+($event.target as HTMLInputElement).value)" />
             </div>
 
             <!-- Send key -->
@@ -158,7 +160,7 @@ async function syncFromWebDAV() {
         <!-- Access / API Keys -->
         <template v-if="activeTab === 'access'">
           <div class="flex flex-col gap-4">
-            <AppInput label="访问密码" v-model="accessConfig" placeholder="访问密码（服务端设置时需要）" type="password"
+            <AppInput label="访问密码" placeholder="访问密码（服务端设置时需要）" type="password"
               :model-value="accessStore.accessCode" @update:model-value="accessStore.update({ accessCode: $event })" />
             <AppInput label="OpenAI API Key" :model-value="accessStore.openaiApiKey" type="password" placeholder="sk-..."
               @update:model-value="accessStore.update({ openaiApiKey: $event })" />
@@ -170,6 +172,47 @@ async function syncFromWebDAV() {
               @update:model-value="accessStore.update({ googleApiKey: $event })" />
             <AppInput label="DeepSeek API Key" :model-value="accessStore.deepseekApiKey" type="password"
               @update:model-value="accessStore.update({ deepseekApiKey: $event })" />
+
+            <!-- ── Ollama ── -->
+            <div class="border-t border-(--color-border) pt-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <AppIcon name="bot" :size="14" class="text-(--color-primary)" />
+                  <span class="text-sm font-semibold text-(--color-text)">Ollama 本地模型</span>
+                  <!-- 连接状态指示 -->
+                  <span v-if="ollamaConnected === true"  class="text-xs text-green-500 flex items-center gap-1"><AppIcon name="confirm" :size="10" /> 已连接</span>
+                  <span v-else-if="ollamaConnected === false" class="text-xs text-red-400 flex items-center gap-1"><AppIcon name="cancel" :size="10" /> 未连接</span>
+                </div>
+                <AppButton variant="secondary" :loading="ollamaLoading" @click="testOllama">
+                  测试连接
+                </AppButton>
+              </div>
+
+              <AppInput
+                label="Ollama 服务地址"
+                :model-value="accessStore.ollamaUrl"
+                placeholder="http://localhost:11434"
+                @update:model-value="accessStore.update({ ollamaUrl: $event })"
+              />
+
+              <p v-if="ollamaError" class="mt-2 text-xs text-red-400">⚠ {{ ollamaError }}</p>
+
+              <!-- 已安装模型列表 -->
+              <div v-if="ollamaModels.length" class="mt-3">
+                <p class="text-xs text-(--color-text-muted) mb-2">已安装模型（{{ ollamaModels.length }} 个）：</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <span
+                    v-for="m in ollamaModels" :key="m.name"
+                    class="px-2 py-0.5 bg-(--color-primary-light) text-(--color-primary) text-xs rounded-full"
+                  >{{ m.name }}</span>
+                </div>
+              </div>
+
+              <p class="mt-3 text-xs text-(--color-text-muted)">
+                需先本地运行 Ollama：<code class="bg-(--color-bg-secondary) px-1 rounded">ollama serve</code>，
+                并设置 <code class="bg-(--color-bg-secondary) px-1 rounded">OLLAMA_ORIGINS=*</code> 以允许跨域访问。
+              </p>
+            </div>
           </div>
         </template>
 

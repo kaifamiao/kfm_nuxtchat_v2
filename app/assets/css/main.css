@@ -75,6 +75,12 @@
   --app-radius-lg:  12px;
   --app-radius-xl:  16px;
   --app-radius-full: 9999px;
+
+  /* Safe area insets（刘海屏 / 圆角屏兼容） */
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
 }
 
 /* Base resets */
@@ -98,11 +104,13 @@ html, body {
 /* Sidebar search placeholder */
 .sidebar-search::placeholder { color: var(--color-sidebar-text-muted); }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border-dark); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+/* Scrollbar（桌面端显示细滚动条，移动端隐藏） */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border-dark); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+}
 
 /* Markdown code blocks */
 pre {

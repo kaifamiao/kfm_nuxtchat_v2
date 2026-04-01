@@ -49,10 +49,10 @@ function formatTime(ms: number) {
 </script>
 
 <template>
-  <aside class="sidebar flex flex-col shrink-0" :style="{ width: `${configStore.sidebarWidth}px` }">
+  <aside class="sidebar flex flex-col shrink-0 h-full" :style="{ width: `${configStore.sidebarWidth}px` }">
 
-    <!-- Logo & New Chat -->
-    <div class="sidebar-header flex items-center gap-2 px-3 py-4">
+    <!-- Logo & New Chat（顶部 safe area 留白） -->
+    <div class="sidebar-header flex items-center gap-2 px-3 pb-4" style="padding-top: calc(1rem + var(--safe-top, 0px))">
       <AppIcon name="logo" :size="22" class="shrink-0 text-primary" />
       <span class="font-bold text-sm flex-1 truncate sidebar-text">NuxtChat</span>
       <button class="sidebar-icon-btn" title="新建对话" @click="newChat">
@@ -100,9 +100,9 @@ function formatTime(ms: number) {
           </p>
         </div>
 
-        <!-- Delete -->
+        <!-- Delete（触摸设备上始终可见） -->
         <button
-          class="delete-btn opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center transition-opacity shrink-0"
+          class="delete-btn w-7 h-7 flex items-center justify-center transition-opacity shrink-0 touch-visible"
           @click.stop="deleteSession(session.id, $event)"
         >
           <AppIcon name="delete" :size="12" />
@@ -191,9 +191,17 @@ function formatTime(ms: number) {
 .delete-btn {
   border-radius: var(--app-radius-sm);
   color:         var(--color-sidebar-text-muted);
+  /* 桌面端默认隐藏，hover 时显示 */
+  opacity: 0;
 }
+.session-item:hover .delete-btn { opacity: 1; }
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.12);
   color:      #ef4444;
+}
+/* 触摸设备（移动端）：始终显示删除按钮（用户无法 hover） */
+@media (pointer: coarse) {
+  .delete-btn { opacity: 0.5; }
+  .session-item.is-active .delete-btn { opacity: 1; }
 }
 </style>

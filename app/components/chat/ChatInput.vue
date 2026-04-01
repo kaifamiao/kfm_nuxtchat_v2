@@ -113,52 +113,65 @@ onMounted(() => textareaRef.value?.focus())
       </div>
     </div>
 
-    <!-- Input area -->
-    <div class="flex items-end gap-2 px-4 py-3 bg-(--color-bg) border-t border-(--color-border)">
-      <!-- Upload button -->
-      <label class="shrink-0 cursor-pointer">
-        <input type="file" accept="image/*" multiple class="hidden" @change="handleFileUpload(($event.target as HTMLInputElement).files)" />
-        <div class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors">
-          <AppIcon name="image" :size="16" class="text-(--color-text-muted)" />
-        </div>
-      </label>
+    <!-- Input area：统一容器，边框包裹整体 -->
+    <div class="px-3 py-3 bg-(--color-bg) border-t border-(--color-border)">
+      <div
+        class="relative flex items-end gap-1 rounded-2xl border bg-(--color-bg-secondary) transition-colors"
+        :class="disabled ? 'border-(--color-border)' : 'border-(--color-border) focus-within:border-(--color-primary)/60'"
+      >
+        <!-- 上传按钮：左下角，在框内 -->
+        <label
+          class="shrink-0 w-9 h-9 mb-2 ml-1 flex items-center justify-center rounded-xl cursor-pointer
+                 hover:bg-(--color-bg-tertiary) active:bg-(--color-bg-tertiary) transition-colors"
+        >
+          <input type="file" accept="image/*" multiple class="hidden"
+            @change="handleFileUpload(($event.target as HTMLInputElement).files)" />
+          <AppIcon name="image" :size="17" class="text-(--color-text-muted)" />
+        </label>
 
-      <!-- Textarea -->
-      <div class="flex-1 relative">
+        <!-- Textarea：透明背景，无独立边框 -->
         <textarea
           ref="textareaRef"
           v-model="inputText"
-          class="w-full bg-(--color-bg-secondary) rounded-xl px-4 py-2.5 text-sm text-(--color-text) outline-none resize-none placeholder:text-(--color-text-muted) min-h-[40px] max-h-[200px] border border-(--color-border) focus:border-(--color-primary)/50 transition-colors"
-          placeholder="发送消息... (Enter 发送，Shift+Enter 换行)"
+          class="flex-1 bg-transparent py-3.5 pr-1 text-sm text-(--color-text) outline-none
+                 resize-none placeholder:text-(--color-text-muted)
+                 min-h-[52px] max-h-[160px] leading-[1.6]"
+          placeholder="发送消息..."
           rows="1"
           :disabled="disabled"
+          autocomplete="off"
+          autocorrect="on"
+          autocapitalize="sentences"
+          enterkeyhint="send"
           @input="adjustHeight"
           @keydown="handleKeydown"
           @paste="pasteHandler"
         />
-      </div>
 
-      <!-- Send / Stop button -->
-      <button
-        class="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl transition-all"
-        :class="isGenerating
-          ? 'bg-red-500 hover:bg-red-600'
-          : canSend
-            ? 'bg-(--color-primary) hover:bg-(--color-primary-hover)'
-            : 'bg-(--color-bg-tertiary) cursor-not-allowed'"
-        @click="isGenerating ? emit('stop') : send()"
-      >
-        <AppIcon
-          :name="isGenerating ? 'speak-stop' : 'send-white'"
-          :size="16"
-          color="white"
-        />
-      </button>
+        <!-- 发送 / 停止按钮：右下角，在框内 -->
+        <button
+          class="shrink-0 w-8 h-8 mb-2 mr-1 flex items-center justify-center rounded-xl transition-all"
+          :class="isGenerating
+            ? 'bg-red-500 active:bg-red-600'
+            : canSend
+              ? 'bg-(--color-primary) active:bg-(--color-primary-hover)'
+              : 'bg-(--color-bg-tertiary) cursor-not-allowed'"
+          @click="isGenerating ? emit('stop') : send()"
+        >
+          <AppIcon
+            :name="isGenerating ? 'speak-stop' : 'send-white'"
+            :size="15"
+            color="white"
+          />
+        </button>
+      </div>
     </div>
 
-    <!-- Hints -->
-    <div class="flex items-center justify-between px-4 pb-2 text-[11px] text-(--color-text-muted)">
+    <!-- 快捷键提示：移动端隐藏（手机键盘没有 Shift+Enter） -->
+    <div class="hidden sm:flex items-center justify-between px-4 pb-2 text-[11px] text-(--color-text-muted)">
       <span>{{ configStore.sendKey === 'Enter' ? 'Enter 发送，Shift+Enter 换行' : 'Shift+Enter 发送，Enter 换行' }}</span>
     </div>
+    <!-- 移动端底部 safe area 垫高 -->
+    <div class="sm:hidden" style="height: var(--safe-bottom, 0px)" />
   </div>
 </template>

@@ -79,9 +79,10 @@ async function shareConversation() {
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <!-- Header -->
-    <div class="flex items-center gap-3 px-4 h-[52px] border-b border-(--color-border) shrink-0 bg-(--color-bg)">
-      <div class="flex-1 min-w-0">
+    <!-- Header（移动端隐藏标题文字，只保留关键按钮） -->
+    <div class="flex items-center gap-2 px-3 h-[52px] border-b border-(--color-border) shrink-0 bg-(--color-bg)">
+      <!-- 标题区（移动端不显示，移动端顶栏已有标题） -->
+      <div class="hidden sm:block flex-1 min-w-0">
         <h2 class="text-sm font-semibold text-(--color-text) truncate">
           {{ session?.topic || '新的对话' }}
         </h2>
@@ -89,38 +90,40 @@ async function shareConversation() {
           {{ session?.messages.length ?? 0 }} 条消息
         </p>
       </div>
+      <!-- 移动端占位 flex-1，把按钮推到右边 -->
+      <div class="flex-1 sm:hidden" />
 
-      <!-- Model selector button -->
+      <!-- Model selector button（移动端缩短只显示图标+短名） -->
       <button
-        class="flex items-center gap-1.5 px-3 h-7 rounded-full border border-(--color-border) hover:border-(--color-primary)/50 text-xs text-(--color-text-secondary) hover:text-(--color-text) transition-all"
+        class="flex items-center gap-1.5 px-2.5 h-8 rounded-full border border-(--color-border) hover:border-(--color-primary)/50 text-xs text-(--color-text-secondary) hover:text-(--color-text) transition-all max-w-[120px] sm:max-w-none truncate"
         @click="showModelSelector = true"
       >
-        <AppIcon name="bot" :size="12" />
-        {{ currentModel }}
-        <AppIcon name="down" :size="10" />
+        <AppIcon name="bot" :size="12" class="shrink-0" />
+        <span class="truncate">{{ currentModel }}</span>
+        <AppIcon name="down" :size="10" class="shrink-0" />
       </button>
 
       <!-- Clear -->
       <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
+        class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) active:bg-(--color-bg-secondary) transition-colors"
         title="清除对话"
         @click="showClearConfirm = true"
       >
         <AppIcon name="clear" :size="16" class="text-(--color-text-muted)" />
       </button>
 
-      <!-- Share：复制对话到剪贴板 -->
+      <!-- Share（移动端隐藏） -->
       <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
+        class="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
         title="分享对话（复制到剪贴板）"
         @click="shareConversation"
       >
         <AppIcon name="share" :size="16" class="text-(--color-text-muted)" />
       </button>
 
-      <!-- Export：下载文件 -->
+      <!-- Export（移动端隐藏） -->
       <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
+        class="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
         title="导出对话"
         @click="showExporter = true"
       >

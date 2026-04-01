@@ -8,6 +8,17 @@ export default defineNuxtConfig({
   // 纯客户端渲染：聊天数据全部存在 IndexedDB，SSR 只会产生水合不匹配
   ssr: false,
 
+  app: {
+    head: {
+      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      meta: [
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+      ],
+    },
+  },
+
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/i18n',

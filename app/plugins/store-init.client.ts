@@ -25,6 +25,7 @@ export default defineNuxtPlugin(async () => {
     syncStore.load(),
   ])
 
-  // 加载完成后立即应用主题，避免主题闪烁
+  // 加载完成后立即应用主题和字体大小
   configStore.setTheme(configStore.theme)
+  configStore.setFontSize(configStore.fontSize)
 })

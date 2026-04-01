@@ -108,6 +108,15 @@ export const useConfigStore = defineStore('config', {
       }
     },
 
+    setFontSize(size: number) {
+      this.fontSize = size
+      this.save()
+      if (import.meta.client) {
+        // 设置在 <html> 上，Tailwind 的 rem 单位才会随之缩放
+        document.documentElement.style.fontSize = `${size}px`
+      }
+    },
+
     setLanguage(lang: string) {
       this.language = lang
       this.save()

@@ -26,8 +26,11 @@ export default defineEventHandler(async (event: H3Event) => {
   if (!apiKey) throw createError({ statusCode: 401, statusMessage: 'No API key provided' })
 
   // Build upstream URL
+  // 如果 baseUrl 路径中已含版本号（如 /v3、/v4），则直接拼路径，不再插入 /v1/
   const baseUrl = body?.openaiUrl || config.openaiBaseUrl || 'https://api.openai.com'
-  const targetUrl = `${baseUrl.replace(/\/$/, '')}/v1/${path}`
+  const base = baseUrl.replace(/\/$/, '')
+  const hasVersionSegment = /\/v\d+/.test(new URL(base, 'http://x').pathname)
+  const targetUrl = hasVersionSegment ? `${base}/${path}` : `${base}/v1/${path}`
 
   // Build forward headers
   const headers: Record<string, string> = {
@@ -46,7 +49,7 @@ export default defineEventHandler(async (event: H3Event) => {
     body: body ? JSON.stringify(forwardBody) : undefined,
   })
 
-  if (!upstream.ok && !isStream) {
+  if (!upstream.ok) {
     const errorBody = await upstream.text()
     throw createError({ statusCode: upstream.status, statusMessage: errorBody })
   }

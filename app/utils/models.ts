@@ -88,5 +88,5 @@ export function findModel(name: string) {
 export const PROVIDER_LIST: ModelProvider[] = [
   'OpenAI', 'Azure', 'Anthropic', 'Google', 'DeepSeek',
   'Alibaba', 'ByteDance', 'Moonshot', 'ChatGLM', 'SiliconFlow',
-  'XAI', 'Baidu', 'Iflytek', '302AI',
+  'XAI', 'Baidu', 'Iflytek', '302AI', 'Ollama',
 ]

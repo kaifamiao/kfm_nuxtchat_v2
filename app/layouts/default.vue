@@ -1,46 +1,68 @@
 <script setup lang="ts">
-import { useConfigStore } from '~/stores/config'
 import { useChatStore } from '~/stores/chat'
 
-const configStore = useConfigStore()
 const chatStore = useChatStore()
-// store-init.client.ts 插件已在首次渲染前完成 IDB 加载，此处无需重复 load
 
-const isMobile = useMediaQuery('(max-width: 768px)')
-const sidebarOpen = ref(true)
+// 完全使用原生 window.matchMedia，彻底绕过 useMediaQuery 初始值为 false 的问题
+// ssr: false 保证此处 window 始终可用
+const mq = window.matchMedia('(max-width: 768px)')
+const isMobile = ref(mq.matches)
+const sidebarOpen = ref(!mq.matches)
 
-// Auto-close sidebar on mobile
-watch(isMobile, (mobile) => { if (mobile) sidebarOpen.value = false })
+onMounted(() => {
+  const handler = (e: MediaQueryListEvent) => {
+    isMobile.value = e.matches
+    sidebarOpen.value = !e.matches
+  }
+  mq.addEventListener('change', handler)
+  onUnmounted(() => mq.removeEventListener('change', handler))
+})
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-(--color-bg)" :style="{ fontSize: `${configStore.fontSize}px` }">
-    <!-- Sidebar -->
-    <Transition name="sidebar">
-      <AppSidebar
-        v-show="sidebarOpen || !isMobile"
-        :class="isMobile ? 'fixed inset-y-0 left-0 z-40 shadow-2xl' : 'relative'"
-      />
-    </Transition>
+  <div class="flex overflow-hidden bg-(--color-bg)" style="height: 100dvh;">
 
-    <!-- Mobile overlay -->
-    <div
-      v-if="isMobile && sidebarOpen"
-      class="fixed inset-0 z-30 bg-black/50"
-      @click="sidebarOpen = false"
-    />
+    <!-- 桌面端：侧边栏常驻，参与 flex 布局 -->
+    <div v-if="!isMobile" class="shrink-0 h-full">
+      <AppSidebar />
+    </div>
 
-    <!-- Main content -->
-    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-      <!-- Mobile header -->
-      <div v-if="isMobile" class="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) shrink-0">
+    <!-- 移动端：抽屉式侧边栏，fixed 定位，按需显示 -->
+    <template v-if="isMobile">
+      <!-- 遮罩 -->
+      <Transition name="overlay">
+        <div
+          v-if="sidebarOpen"
+          class="fixed inset-0 z-30 bg-black/50"
+          @click="sidebarOpen = false"
+        />
+      </Transition>
+      <!-- 抽屉 -->
+      <Transition name="sidebar">
+        <div
+          v-if="sidebarOpen"
+          class="fixed inset-y-0 left-0 z-40 shadow-2xl h-full"
+          style="width: min(300px, 85vw)"
+        >
+          <AppSidebar />
+        </div>
+      </Transition>
+    </template>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- 移动端顶栏 -->
+      <div
+        v-if="isMobile"
+        class="mobile-header flex items-center gap-3 px-4 border-b border-(--color-border) shrink-0"
+      >
         <button
-          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
+          class="w-11 h-11 flex items-center justify-center rounded-xl active:bg-(--color-bg-secondary) transition-colors"
           @click="sidebarOpen = !sidebarOpen"
         >
-          <AppIcon name="menu" :size="18" />
+          <AppIcon name="menu" :size="20" />
         </button>
-        <h1 class="text-sm font-semibold text-(--color-text) truncate">
+        <h1 class="text-sm font-semibold text-(--color-text) truncate flex-1">
           {{ chatStore.currentSession?.topic || '新的对话' }}
         </h1>
       </div>
@@ -48,7 +70,6 @@ watch(isMobile, (mobile) => { if (mobile) sidebarOpen.value = false })
       <slot />
     </div>
 
-    <!-- Global toast -->
     <AppToast ref="toast" />
   </div>
 </template>
@@ -56,4 +77,12 @@ watch(isMobile, (mobile) => { if (mobile) sidebarOpen.value = false })
 <style scoped>
 .sidebar-enter-active, .sidebar-leave-active { transition: transform 0.25s ease; }
 .sidebar-enter-from, .sidebar-leave-to { transform: translateX(-100%); }
+
+.overlay-enter-active, .overlay-leave-active { transition: opacity 0.2s ease; }
+.overlay-enter-from, .overlay-leave-to { opacity: 0; }
+
+.mobile-header {
+  padding-top: calc(0.75rem + var(--safe-top, 0px));
+  padding-bottom: 0.75rem;
+}
 </style>

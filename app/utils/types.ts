@@ -88,6 +88,7 @@ export type ModelProvider =
   | 'ChatGLM'
   | 'Stability'
   | '302AI'
+  | 'Ollama'
 
 export interface LLMModel {
   name: string
@@ -158,4 +159,6 @@ export interface AccessConfig {
   bytedanceApiKey: string
   baiduUrl: string
   baiduApiKey: string
+  // Ollama（本地，无需 API Key）
+  ollamaUrl: string
 }

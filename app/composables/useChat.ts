@@ -164,28 +164,43 @@ export function useChat() {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * 所有 OpenAI 兼容协议的 Provider 统一走 /api/openai/ 代理，
+ * 通过 body.openaiUrl 告知代理实际转发目标，无需为每家建单独路由。
+ */
 function getEndpoint(provider: string): string {
-  const map: Record<string, string> = {
-    OpenAI: '/api/openai/chat/completions',
-    Anthropic: '/api/anthropic/v1/messages',
-    Google: '/api/google/models',
-    DeepSeek: '/api/deepseek/chat/completions',
-    Alibaba: '/api/alibaba/chat/completions',
-    ByteDance: '/api/bytedance/chat/completions',
-    Moonshot: '/api/moonshot/chat/completions',
-    ChatGLM: '/api/glm/chat/completions',
-    SiliconFlow: '/api/siliconflow/chat/completions',
-    XAI: '/api/xai/chat/completions',
-  }
-  return map[provider] || '/api/openai/chat/completions'
+  if (provider === 'Anthropic') return '/api/anthropic/v1/messages'
+  if (provider === 'Google')    return '/api/google/models'
+  if (provider === 'Ollama')    return '/api/ollama/v1/chat/completions'
+  // DeepSeek 有专属代理：优先官方 API，失败降级自定义地址
+  if (provider === 'DeepSeek')  return '/api/deepseek/chat/completions'
+  return '/api/openai/chat/completions'
 }
 
 function buildHeaders(provider: string, access: any): Record<string, string> {
+  if (provider === 'Ollama')    return {}
+  if (provider === 'Anthropic') return { 'x-api-key': access.apiKeyForProvider(provider) }
   const apiKey = access.apiKeyForProvider(provider)
-  if (provider === 'Anthropic') return { 'x-api-key': apiKey }
-  return { Authorization: `Bearer ${apiKey}` }
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
 }
 
 function getProviderBody(provider: string, access: any): Record<string, unknown> {
-  return { accessCode: access.accessCode }
+  if (provider === 'Ollama') {
+    return { ollamaUrl: access.ollamaUrl || 'http://localhost:11434' }
+  }
+  if (provider === 'DeepSeek') {
+    // 把用户配置的自定义地址传给专属代理，用于 fallback
+    const customUrl = access.baseUrlForProvider('DeepSeek')
+    return {
+      accessCode: access.accessCode,
+      ...(customUrl ? { deepseekUrl: customUrl } : {}),
+    }
+  }
+  // 其余 OpenAI 兼容 Provider：通过 openaiUrl 告知通用代理目标地址
+  const baseUrl: string = access.baseUrlForProvider(provider) || ''
+  return {
+    accessCode: access.accessCode,
+    ...(baseUrl && provider !== 'OpenAI' ? { openaiUrl: baseUrl } : {}),
+  }
 }
