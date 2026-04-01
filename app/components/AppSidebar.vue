@@ -54,8 +54,7 @@ function formatTime(ms: number) {
 
     <!-- Logo & New Chat（顶部 safe area 留白） -->
     <div class="sidebar-header flex items-center gap-2 px-3 pb-4" style="padding-top: calc(1rem + var(--safe-top, 0px))">
-      <AppIcon name="logo" :size="22" class="shrink-0 text-primary" />
-      <span class="font-bold text-sm flex-1 truncate sidebar-text">NuxtChat</span>
+      <AppLogo size="sm" class="flex-1 min-w-0 truncate" />
       <button class="sidebar-icon-btn" title="新建对话" @click="newChat">
         <AppIcon name="add" :size="16" />
       </button>

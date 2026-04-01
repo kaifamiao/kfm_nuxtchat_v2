@@ -3,7 +3,7 @@ import { useAccessStore } from '~/stores/access'
 import { useConfigStore } from '~/stores/config'
 import { useMcpStore } from '~/stores/mcp'
 import { parseSSELine } from '~/utils/common'
-import type { ChatMessage } from '~/utils/types'
+import type { ChatMessage, MessageContent } from '~/utils/types'
 
 /** 累积的工具调用（SSE delta 是分片的，需要按 index 拼接） */
 interface ToolCallAcc {
@@ -21,9 +21,14 @@ export function useChat() {
   const isGenerating = ref(false)
   let abortController: AbortController | null = null
 
-  async function sendMessage(content: string, sessionId?: string) {
+  async function sendMessage(content: string | MessageContent[], sessionId?: string) {
     const sid = sessionId || chatStore.currentSessionId
-    if (!sid || isGenerating.value || !content.trim()) return
+    // 提取纯文本部分（用于标题生成和空内容判断）
+    const textContent = typeof content === 'string'
+      ? content
+      : content.filter(p => p.type === 'text').map(p => p.text ?? '').join('')
+    const hasImage = Array.isArray(content) && content.some(p => p.type === 'image_url')
+    if (!sid || isGenerating.value || (!textContent.trim() && !hasImage)) return
 
     isGenerating.value = true
     chatStore.isGenerating = true
@@ -166,7 +171,7 @@ export function useChat() {
       })
 
       if (session.messages.length <= 3 && configStore.autoGenerateTitle)
-        generateTitle(sid, content)
+        generateTitle(sid, textContent)
     }
     catch (e: any) {
       if (e.name === 'AbortError') {

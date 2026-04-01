@@ -26,7 +26,7 @@ watch(messages, async () => {
 
 function handleSend(content: string | any[]) {
   if (!chatStore.currentSessionId) chatStore.newSession()
-  sendMessage(typeof content === 'string' ? content : JSON.stringify(content))
+  sendMessage(content)
 }
 
 function handleRetry() {
@@ -135,7 +135,7 @@ async function shareConversation() {
     <div class="flex-1 overflow-y-auto py-4 scroll-smooth">
       <!-- Empty state -->
       <div v-if="!messages.length" class="flex flex-col items-center justify-center h-full gap-4 text-(--color-text-muted)">
-        <AppIcon name="logo" :size="48" class="opacity-30" />
+        <AppLogo size="md" vertical class="opacity-30" />
         <p class="text-sm">发送消息，开始对话</p>
         <p class="text-xs opacity-60">当前模型：{{ currentModel }}</p>
       </div>

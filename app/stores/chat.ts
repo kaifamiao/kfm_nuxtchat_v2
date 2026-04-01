@@ -146,7 +146,7 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    createUserMessage(content: string): ChatMessage {
+    createUserMessage(content: string | import('~/utils/types').MessageContent[]): ChatMessage {
       return { id: createMessageId(), role: 'user', content, date: now() }
     },
 

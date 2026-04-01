@@ -239,8 +239,7 @@ async function syncFromWebDAV() {
         <!-- About -->
         <template v-if="activeTab === 'about'">
           <div class="flex flex-col items-center gap-4 py-6">
-            <AppIcon name="logo" :size="56" class="text-(--color-primary)" />
-            <h2 class="text-xl font-bold text-(--color-text)">NuxtChat</h2>
+            <AppLogo size="lg" vertical />
             <p class="text-sm text-(--color-text-muted) text-center">
               基于 Vue3 + Nuxt4 构建的 AI 聊天客户端<br />
               支持 14+ AI 提供商，完全复刻 NextChat 功能

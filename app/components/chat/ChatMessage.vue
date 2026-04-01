@@ -11,6 +11,7 @@ const emit = defineEmits<{ retry: []; delete: [] }>()
 
 const isCopied = ref(false)
 const showActions = ref(false)
+const zoomImg = ref<string | null>(null)
 
 // 触摸设备：tap 气泡切换操作栏；桌面设备用 mouseenter/leave
 function onBubbleTap() {
@@ -82,7 +83,21 @@ async function copy() {
           message.isError ? 'border border-red-300' : '',
         ]"
       >
-        <!-- Streaming indicator -->
+        <!-- 图片附件（多模态消息） -->
+        <div
+          v-if="Array.isArray(message.content) && message.content.some((p: any) => p.type === 'image_url')"
+          class="flex flex-wrap gap-2 mb-2"
+        >
+          <img
+            v-for="(part, i) in (message.content as any[]).filter((p: any) => p.type === 'image_url')"
+            :key="i"
+            :src="part.image_url.url"
+            class="max-h-48 max-w-full rounded-lg object-contain cursor-zoom-in"
+            @click.stop="zoomImg = part.image_url.url"
+          />
+        </div>
+
+        <!-- 文字内容 -->
         <template v-if="message.streaming">
           <MarkdownRenderer :content="contentText" />
           <span class="typing-cursor" />
@@ -127,6 +142,16 @@ async function copy() {
       </Transition>
     </div>
   </div>
+<!-- 图片放大预览 -->
+<Teleport to="body">
+  <div
+    v-if="zoomImg"
+    class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-zoom-out"
+    @click="zoomImg = null"
+  >
+    <img :src="zoomImg" class="max-w-full max-h-full rounded-xl object-contain shadow-2xl" />
+  </div>
+</Teleport>
 </template>
 
 <style scoped>
