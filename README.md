@@ -208,56 +208,56 @@ ENABLE_MCP=true
 
 ```
 kfm_nuxtchat_v2/
-├── nuxt.config.ts              # 框架配置
+├── nuxt.config.ts                  # 框架配置（ssr: false, viewport-fit=cover）
 ├── app/
-│   ├── app.vue                 # 根组件
-│   ├── assets/
-│   │   ├── css/main.css        # Tailwind v4 入口 + CSS 变量主题
-│   │   └── css/main.css        # （icons 目录已移除，改用 Lucide）
+│   ├── app.vue                     # 根组件
+│   ├── assets/css/main.css         # Tailwind v4 入口 + CSS 变量主题 + safe-area
 │   ├── layouts/
-│   │   └── default.vue         # 主布局（侧边栏 + 内容区）
+│   │   └── default.vue             # 主布局（桌面常驻 / 移动端抽屉式侧边栏）
 │   ├── pages/
 │   │   ├── index.vue           # 主聊天页
 │   │   ├── plugin.vue          # 插件管理
 │   │   ├── mcp.vue             # MCP 工具市场
 │   │   └── sd.vue              # Stable Diffusion
 │   ├── components/
-│   │   ├── AppSidebar.vue      # 侧边栏
-│   │   ├── ui/                 # 基础组件（Button/Modal/Input/Icon/Toast）
-│   │   ├── chat/               # 聊天组件（View/Input/Message/ModelSelector）
-│   │   ├── markdown/           # Markdown 渲染器
-│   │   ├── settings/           # 设置面板（5 Tab）
-│   │   ├── mask/               # Mask 模板库
-│   │   ├── artifacts/          # Artifacts 沙盒预览
-│   │   ├── exporter/           # 对话导出
-│   │   └── realtime/           # 实时语音对话
-│   ├── stores/                 # Pinia Store（10 个）
-│   │   ├── chat.ts             # 会话 & 消息
-│   │   ├── config.ts           # 模型配置 & UI 设置
-│   │   ├── access.ts           # API Key & 鉴权
-│   │   ├── mask.ts             # 提示词模板
-│   │   ├── plugin.ts           # 插件管理
-│   │   ├── prompt.ts           # 提示词库
-│   │   ├── sync.ts             # 数据同步
-│   │   ├── mcp.ts              # MCP 服务器
-│   │   └── sd.ts               # Stable Diffusion
+│   │   ├── AppSidebar.vue          # 侧边栏（桌面/移动端复用）
+│   │   ├── ui/                     # 基础组件（Modal / Icon / Toast …）
+│   │   ├── chat/                   # 聊天组件（View / Input / Message / ModelSelector）
+│   │   ├── markdown/               # Markdown 渲染器（含 KaTeX / Mermaid）
+│   │   ├── settings/               # 设置面板（通用 / API Key / 主题 / 字体）
+│   │   ├── mask/                   # 提示词 Mask 模板库
+│   │   ├── artifacts/              # Artifacts 沙盒 iframe 预览
+│   │   ├── exporter/               # 对话导出（MD / JSON / TXT）
+│   │   └── realtime/               # 实时语音对话
 │   ├── composables/
-│   │   └── useChat.ts          # 流式对话核心逻辑
-│   ├── utils/
-│   │   ├── types.ts            # TypeScript 类型定义
-│   │   ├── db.ts               # IndexedDB 封装
-│   │   ├── models.ts           # 模型列表（40+ 模型）
-│   │   └── common.ts           # 工具函数
-│   └── locales/                # i18n（中文 / English）
+│   │   ├── useChat.ts              # 流式对话核心逻辑（多 Provider 路由）
+│   │   └── useOllama.ts            # Ollama 动态模型拉取 & 连通性检测
+│   ├── stores/                     # Pinia Store（10 个）
+│   │   ├── chat.ts                 # 会话 & 消息
+│   │   ├── config.ts               # 模型配置 & UI 设置（主题 / 字体大小）
+│   │   ├── access.ts               # API Key & 鉴权（含 ollamaUrl）
+│   │   ├── mask.ts / prompt.ts     # 提示词模板 & 提示词库
+│   │   ├── plugin.ts / mcp.ts      # 插件 & MCP 服务器
+│   │   ├── sync.ts                 # WebDAV 数据同步
+│   │   └── sd.ts                   # Stable Diffusion
+│   ├── plugins/
+│   │   └── store-init.client.ts    # 客户端启动时从 IndexedDB 恢复全量状态
+│   └── utils/
+│       ├── types.ts                # TypeScript 类型定义
+│       ├── db.ts                   # IndexedDB 封装 + 串行写队列
+│       ├── models.ts               # 模型列表（40+ 模型，含 Ollama 动态模型）
+│       └── common.ts               # 工具函数
 ├── server/
-│   ├── utils/auth.ts           # 统一鉴权工具
-│   └── api/                    # Nitro 服务端路由
-│       ├── openai/[...path].ts # OpenAI 代理
-│       ├── anthropic/          # Anthropic 代理
-│       ├── google/             # Google 代理
-│       ├── config.ts           # 公开配置接口
-│       └── webdav/             # WebDAV 同步接口
-└── i18n/locales/               # @nuxtjs/i18n 语言包
+│   ├── utils/auth.ts               # 统一鉴权工具
+│   └── api/
+│       ├── openai/[...path].ts     # OpenAI 兼容通用代理
+│       ├── deepseek/[...path].ts   # DeepSeek 专属代理（官方优先 + fallback）
+│       ├── ollama/[...path].ts     # Ollama 本地代理（无需 API Key）
+│       ├── anthropic/              # Anthropic 代理
+│       ├── google/                 # Google 代理
+│       ├── config.ts               # 公开配置接口
+│       └── webdav/                 # WebDAV 同步接口
+└── i18n/locales/                   # @nuxtjs/i18n 语言包（zh / en）
 ```
 
 ### 数据流
@@ -326,8 +326,8 @@ bun .output/server/index.mjs
 | @svgr/webpack | lucide-vue-next |
 | next/navigation | useRouter（Vue Router） |
 | API Routes（serverless） | Nuxt Server Routes（Nitro） |
-| React Server Components | Nuxt SSR |
-| localStorage（降级） | IndexedDB（首选） |
+| React Server Components | 纯客户端渲染（`ssr: false`，IndexedDB 无水合冲突） |
+| localStorage（降级） | IndexedDB + 串行写队列（idb-keyval） |
 
 ---
 
