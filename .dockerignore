@@ -1,0 +1,33 @@
+# 依赖目录（构建时重新安装）
+node_modules
+
+# Nuxt 构建缓存
+.nuxt
+.output
+
+# 版本控制
+.git
+.gitignore
+.gitattributes
+
+# 环境变量（不要打包进镜像）
+.env
+.env.*
+!.env.example
+
+# 日志
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# 编辑器
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# 文档（可选：打包进镜像也无害，但会增大体积）
+README.md
+docker.md
+NextChat_分析报告.md

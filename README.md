@@ -273,6 +273,32 @@ kfm_nuxtchat_v2/
                                       └─► idb-keyval 持久化到 IndexedDB
 ```
 
+### 存储架构
+
+底层使用浏览器原生 **IndexedDB**，通过 `idb-keyval` 封装为简洁的 key-value 接口，并加了串行写队列防止并发写竞争。
+
+| 维度 | 详情 |
+|------|------|
+| **底层存储** | IndexedDB（浏览器原生，无大小限制，数据本地不上传） |
+| **封装库** | `idb-keyval`（轻量 key-value 接口） |
+| **数据库名** | `nuxtchat` / store: `keyval` |
+| **写入安全** | 串行写队列（`writeQueue`）防止并发写竞争 |
+| **序列化** | 写入前 `JSON.parse(JSON.stringify(value))` 剥离 Vue Proxy，防止引用变更导致数据错误 |
+
+**各 Key 存储内容：**
+
+| DB Key | 内容 |
+|--------|------|
+| `chat-store` | 所有会话列表 + 消息记录 |
+| `config-store` | 模型配置、主题、字体大小等 UI 设置 |
+| `access-store` | API Key、访问密码、Ollama 地址 |
+| `mask-store` | 提示词 Mask 模板 |
+| `plugin-store` | 插件列表 |
+| `prompt-store` | 提示词库 |
+| `sync-store` | WebDAV 同步配置 |
+
+**数据流转：** 页面加载时由 `plugins/store-init.client.ts` 从 IndexedDB 读取所有 Store 注入 Pinia；每次状态变更调用各 Store 的 `save()` 写回 IndexedDB。
+
 ---
 
 ## 部署
@@ -281,10 +307,29 @@ kfm_nuxtchat_v2/
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
-1. Fork 本仓库
-2. 在 Vercel 中导入项目
-3. 配置环境变量（见上方表格）
-4. 部署完成
+**工作原理**：项目根目录已包含 `vercel.json`，Vercel 自动使用 Bun 安装依赖并构建。Nitro 检测到 `VERCEL=1` 环境变量后，自动切换为 vercel preset，API 路由部署为 Serverless Functions，静态资源托管在 CDN。
+
+**部署步骤：**
+
+1. Fork 本仓库到你的 GitHub
+2. 打开 [vercel.com/new](https://vercel.com/new)，导入 Fork 后的仓库
+3. 在 **Environment Variables** 面板中添加以下变量（按需配置）：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `CODE` | 访问密码（留空不启用） | `my-password` |
+| `OPENAI_API_KEY` | OpenAI API Key | `sk-...` |
+| `OPENAI_BASE_URL` | OpenAI 代理地址（可选） | `https://api.openai.com` |
+| `ANTHROPIC_API_KEY` | Anthropic API Key | `sk-ant-...` |
+| `GOOGLE_API_KEY` | Google Gemini API Key | `AIza...` |
+| `AZURE_API_KEY` | Azure OpenAI Key | — |
+| `AZURE_BASE_URL` | Azure OpenAI Endpoint | — |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key | `sk-...` |
+| `ENABLE_MCP` | 启用 MCP 工具市场 | `true` |
+
+4. 点击 **Deploy** 完成部署
+
+> **注意**：Vercel 免费计划的 Serverless Functions 有 10 秒超时限制。如果使用流式响应时出现超时，建议升级到 Pro 计划（60 秒超时）或使用自部署方案。
 
 ### Docker
 
@@ -294,7 +339,7 @@ docker build -t nuxtchat .
 
 # 运行容器
 docker run -d \
-  -p 3000:3000 \
+  -p 13000:3000 \
   -e OPENAI_API_KEY=sk-... \
   -e CODE=your-password \
   nuxtchat
