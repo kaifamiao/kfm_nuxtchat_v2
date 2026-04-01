@@ -77,4 +77,5 @@ export const DB_KEYS = {
   PLUGIN_STORE: 'plugin-store',
   PROMPT_STORE: 'prompt-store',
   SYNC_STORE: 'sync-store',
+  MCP_STORE: 'mcp-store',
 } as const

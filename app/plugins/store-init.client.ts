@@ -8,6 +8,7 @@ import { useConfigStore } from '~/stores/config'
 import { useMaskStore } from '~/stores/mask'
 import { useAccessStore } from '~/stores/access'
 import { useSyncStore } from '~/stores/sync'
+import { useMcpStore } from '~/stores/mcp'
 
 export default defineNuxtPlugin(async () => {
   const configStore = useConfigStore()
@@ -15,6 +16,7 @@ export default defineNuxtPlugin(async () => {
   const maskStore = useMaskStore()
   const accessStore = useAccessStore()
   const syncStore = useSyncStore()
+  const mcpStore = useMcpStore()
 
   // 并行从 IndexedDB 加载所有 store
   await Promise.all([
@@ -23,6 +25,7 @@ export default defineNuxtPlugin(async () => {
     maskStore.load(),
     accessStore.load(),
     syncStore.load(),
+    mcpStore.load(),
   ])
 
   // 加载完成后立即应用主题和字体大小

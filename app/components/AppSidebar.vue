@@ -25,6 +25,7 @@ function newChat() {
 }
 function selectSession(id: string) {
   chatStore.selectSession(id)
+  router.push('/')
 }
 function deleteSession(id: string, e: Event) {
   e.stopPropagation()

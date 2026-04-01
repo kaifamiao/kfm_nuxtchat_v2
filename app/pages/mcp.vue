@@ -50,8 +50,8 @@ const statusLabel: Record<McpServer['status'], string> = {
           :class="mcpStore.isEnabled ? 'bg-(--color-primary)' : 'bg-(--color-bg-tertiary)'"
           @click="mcpStore.toggleEnabled"
         >
-          <span class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
-            :class="mcpStore.isEnabled ? 'translate-x-4.5' : 'translate-x-0.5'" />
+          <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+            :class="mcpStore.isEnabled ? 'translate-x-4' : 'translate-x-0'" />
         </button>
       </div>
       <AppButton variant="primary" icon="add" @click="showAddModal = true">添加服务器</AppButton>
@@ -92,8 +92,8 @@ const statusLabel: Record<McpServer['status'], string> = {
                 :class="server.enabled ? 'bg-(--color-primary)' : 'bg-(--color-bg-tertiary)'"
                 @click="mcpStore.toggleServer(server.id)"
               >
-                <span class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
-                  :class="server.enabled ? 'translate-x-4.5' : 'translate-x-0.5'" />
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                  :class="server.enabled ? 'translate-x-4' : 'translate-x-0'" />
               </button>
               <button
                 class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-100 transition-colors"

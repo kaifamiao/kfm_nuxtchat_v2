@@ -58,6 +58,10 @@ export default defineNuxtConfig({
     azureApiKey: process.env.AZURE_API_KEY || '',
     azureBaseUrl: process.env.AZURE_BASE_URL || '',
     accessCode: process.env.CODE || '',
+    // 搜索引擎（web_search MCP 工具）
+    tavilyApiKey: process.env.TAVILY_API_KEY || '',
+    serperApiKey: process.env.SERPER_API_KEY || '',
+    braveSearchApiKey: process.env.BRAVE_SEARCH_API_KEY || '',
     // Public config (accessible in browser)
     public: {
       appVersion: '1.0.0',

@@ -72,8 +72,8 @@ function getParsedInfo(content: string) {
               @click="pluginStore.togglePlugin(plugin.id)"
             >
               <span
-                class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
-                :class="pluginStore.isEnabled(plugin.id) ? 'translate-x-4.5' : 'translate-x-0.5'"
+                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                :class="pluginStore.isEnabled(plugin.id) ? 'translate-x-4' : 'translate-x-0'"
               />
             </button>
             <button

@@ -67,9 +67,13 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 - ✅ 自定义 JSON 插件导入
 
 ### MCP（Model Context Protocol）
-- ✅ MCP 服务器管理（SSE / stdio 协议）
-- ✅ 工具市场 UI
-- ✅ 可用工具列表展示
+- ✅ **内置 MCP 服务器**（JSON-RPC 2.0 over HTTP，零配置可用）
+- ✅ 内置工具：当前时间、数学计算、随机数、**实时网络搜索**
+- ✅ 实时网络搜索：支持 Tavily / Serper / Brave / DuckDuckGo 四级降级
+- ✅ 自定义外部 MCP 服务器（SSE / stdio 协议）
+- ✅ 工具自动发现（initialize → tools/list）
+- ✅ 递归工具调用（while 循环驱动，支持多轮工具链）
+- ✅ 工具市场 UI（连接状态实时显示、工具列表展示）
 
 ### Artifacts（内容预览）
 - ✅ AI 生成 HTML / 代码的沙盒 iframe 预览
@@ -177,6 +181,21 @@ DEEPSEEK_API_KEY=sk-...
 # ── 功能开关 ──────────────────────────────────────────────
 # 启用 MCP 工具市场
 ENABLE_MCP=true
+
+# ── MCP 网络搜索（四选一，优先级从高到低） ────────────────
+# 1. Tavily（推荐，AI 专用，结果质量最佳）
+#    申请：https://app.tavily.com  免费 1000 次/月
+TAVILY_API_KEY=tvly-...
+
+# 2. Serper.dev（Google 搜索结果）
+#    申请：https://serper.dev      免费 2500 次/月
+# SERPER_API_KEY=...
+
+# 3. Brave Search
+#    申请：https://brave.com/search/api  免费 2000 次/月
+# BRAVE_SEARCH_API_KEY=...
+
+# 4. DuckDuckGo（以上均未配置时自动兜底，无需 Key）
 ```
 
 > **安全说明**：所有 `*_API_KEY` 变量仅在服务端可见，浏览器端永远无法获取。
@@ -301,6 +320,72 @@ kfm_nuxtchat_v2/
 
 ---
 
+## MCP（Model Context Protocol）
+
+### 架构概览
+
+```
+用户消息
+  └─► useChat（检测 mcpStore.isEnabled）
+        └─► 构建请求 + 注入 tools[]（OpenAI function calling 格式）
+              └─► LLM 返回 finish_reason: "tool_calls"
+                    └─► runTool()：POST /api/mcp（JSON-RPC 2.0）
+                          └─► 工具执行结果追加到消息链
+                                └─► 再次调用 LLM（while 循环）
+                                      └─► finish_reason: "stop" → 输出最终答案
+```
+
+- **协议**：JSON-RPC 2.0 over HTTP POST，与标准 MCP SSE 传输兼容
+- **工具注入**：OpenAI function calling 格式（`tools` + `tool_choice: "auto"`）
+- **递归调用**：while 循环驱动，支持 LLM 在一次对话中多轮调用不同工具
+- **Provider 兼容**：仅对 OpenAI 兼容 Provider 注入 tools，Anthropic / Google 自动跳过
+
+### 内置工具
+
+| 工具名 | 功能 | 参数 |
+|--------|------|------|
+| `get_current_datetime` | 获取服务器当前时间 | `timezone`（可选，默认 Asia/Shanghai） |
+| `calculate` | 计算数学表达式 | `expression`（如 `2 + 3 * 4`） |
+| `get_random_number` | 生成指定范围随机整数 | `min`、`max` |
+| `web_search` | 实时网络搜索 | `query`、`count`（1-10，默认 5） |
+
+### 实时搜索方案
+
+`web_search` 工具按以下优先级自动选择搜索引擎：
+
+| 优先级 | 引擎 | 环境变量 | 免费额度 | 特点 |
+|--------|------|----------|----------|------|
+| **1** | **Tavily** | `TAVILY_API_KEY` | 1000 次/月 | 专为 AI Agent 设计，内容质量最佳，摘要适合 LLM 处理 |
+| **2** | **Serper.dev** | `SERPER_API_KEY` | 2500 次/月 | 返回真实 Google 搜索结果，数据最全 |
+| **3** | **Brave Search** | `BRAVE_SEARCH_API_KEY` | 2000 次/月 | 隐私友好，结果独立不依赖 Google |
+| **4** | **DuckDuckGo** | 无需配置 | 无限制 | 自动兜底，即装即用，结果较少 |
+
+**申请地址：**
+- Tavily：https://app.tavily.com（注册即送，推荐首选）
+- Serper.dev：https://serper.dev
+- Brave Search：https://brave.com/search/api
+
+**搜索结果格式**（返回给 LLM 的文本示例）：
+```
+**1. 标题**
+🔗 https://example.com
+摘要内容...
+
+**2. 标题**
+...
+```
+
+### 添加自定义 MCP 服务器
+
+在 MCP 工具市场页面点击「添加服务器」，填写：
+- **名称**：自定义显示名称
+- **URL**：MCP 服务器地址（如 `https://mcp.example.com/api/mcp`）
+- **类型**：SSE（通过 HTTP）
+
+启用开关后，NuxtChat 会自动执行 `initialize` + `tools/list`，发现并注册该服务器提供的所有工具。
+
+---
+
 ## 部署
 
 ### Vercel
@@ -326,6 +411,9 @@ kfm_nuxtchat_v2/
 | `AZURE_BASE_URL` | Azure OpenAI Endpoint | — |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key | `sk-...` |
 | `ENABLE_MCP` | 启用 MCP 工具市场 | `true` |
+| `TAVILY_API_KEY` | MCP 网络搜索（推荐） | `tvly-...` |
+| `SERPER_API_KEY` | MCP 网络搜索（备选） | — |
+| `BRAVE_SEARCH_API_KEY` | MCP 网络搜索（备选） | — |
 
 4. 点击 **Deploy** 完成部署
 

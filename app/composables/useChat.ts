@@ -1,13 +1,22 @@
 import { useChatStore } from '~/stores/chat'
 import { useAccessStore } from '~/stores/access'
 import { useConfigStore } from '~/stores/config'
+import { useMcpStore } from '~/stores/mcp'
 import { parseSSELine } from '~/utils/common'
 import type { ChatMessage } from '~/utils/types'
+
+/** 累积的工具调用（SSE delta 是分片的，需要按 index 拼接） */
+interface ToolCallAcc {
+  id: string
+  name: string
+  arguments: string
+}
 
 export function useChat() {
   const chatStore = useChatStore()
   const accessStore = useAccessStore()
   const configStore = useConfigStore()
+  const mcpStore = useMcpStore()
 
   const isGenerating = ref(false)
   let abortController: AbortController | null = null
@@ -20,11 +29,8 @@ export function useChat() {
     chatStore.isGenerating = true
     abortController = new AbortController()
 
-    // Add user message
     const userMsg = chatStore.createUserMessage(content)
     chatStore.addMessage(sid, userMsg)
-
-    // Add placeholder assistant message
     const assistantMsg = chatStore.createAssistantMessage()
     chatStore.addMessage(sid, assistantMsg)
 
@@ -35,101 +41,150 @@ export function useChat() {
       const modelConfig = session.mask.modelConfig
       const provider = modelConfig.providerName || configStore.currentProvider
       const model = modelConfig.model || configStore.currentModel
-
-      // Build messages array (history + new user msg)
       const historyCount = modelConfig.historyMessageCount ?? 10
       const history = session.messages
-        .slice(0, -1) // exclude the placeholder
+        .slice(0, -1)
         .filter(m => !m.isError && !m.streaming)
         .slice(-historyCount)
 
-      const messages = [
+      let messages: any[] = [
         ...session.mask.context.map(m => ({ role: m.role, content: m.content })),
         ...history.map(m => ({ role: m.role, content: m.content })),
       ]
 
-      // Choose endpoint by provider
       const endpoint = getEndpoint(provider!)
       const headers = buildHeaders(provider!, accessStore)
-
-      const body = {
+      const baseBody = {
         model,
-        messages,
         stream: true,
         temperature: modelConfig.temperature,
         max_tokens: modelConfig.max_tokens,
         ...getProviderBody(provider!, accessStore),
       }
 
-      const resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify(body),
-        signal: abortController.signal,
-      })
+      // MCP 工具（只对 OpenAI 兼容 provider 注入，Anthropic/Google 格式不同）
+      const supportsTools = !['Anthropic', 'Google'].includes(provider!)
+      const mcpTools = supportsTools && mcpStore.isEnabled ? mcpStore.openAITools : []
 
-      if (!resp.ok) {
-        const err = await resp.text()
-        throw new Error(`API Error ${resp.status}: ${err}`)
-      }
+      // ── 工具调用循环 ─────────────────────────────────────────
+      let finalText = ''
+      let continueLoop = true
 
-      // Stream parse（只更新内存，不写 IDB）
-      let fullText = ''
-      const reader = resp.body?.getReader()
-      if (!reader) throw new Error('No response body')
-      const decoder = new TextDecoder()
+      while (continueLoop) {
+        const reqBody = {
+          ...baseBody,
+          messages,
+          ...(mcpTools.length ? { tools: mcpTools, tool_choice: 'auto' } : {}),
+        }
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
-        for (const line of lines) {
-          const data = parseSSELine(line.trim())
-          if (!data) continue
-          try {
-            const parsed = JSON.parse(data)
-            const delta = parsed.choices?.[0]?.delta?.content || ''
-            if (delta) {
-              fullText += delta
-              // 仅更新内存，不触发 IDB 写入
-              chatStore.appendStreamContent(sid, fullText)
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(reqBody),
+          signal: abortController!.signal,
+        })
+
+        if (!resp.ok) throw new Error(`API Error ${resp.status}: ${await resp.text()}`)
+
+        let chunkText = ''
+        const toolCallsMap: Record<number, ToolCallAcc> = {}
+        let finishReason = ''
+        const reader = resp.body?.getReader()
+        if (!reader) throw new Error('No response body')
+        const decoder = new TextDecoder()
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          for (const line of decoder.decode(value, { stream: true }).split('\n')) {
+            const data = parseSSELine(line.trim())
+            if (!data) continue
+            try {
+              const choice = JSON.parse(data).choices?.[0]
+              if (!choice) continue
+              // 累积文字
+              if (choice.delta?.content) {
+                chunkText += choice.delta.content
+                chatStore.appendStreamContent(sid, chunkText)
+              }
+              // 累积工具调用 delta（按 index 拼接）
+              for (const tc of choice.delta?.tool_calls ?? []) {
+                const i = tc.index ?? 0
+                if (!toolCallsMap[i]) toolCallsMap[i] = { id: '', name: '', arguments: '' }
+                if (tc.id) toolCallsMap[i].id = tc.id
+                if (tc.function?.name) toolCallsMap[i].name += tc.function.name
+                if (tc.function?.arguments) toolCallsMap[i].arguments += tc.function.arguments
+              }
+              if (choice.finish_reason) finishReason = choice.finish_reason
+            } catch {}
+          }
+        }
+
+        const toolCalls = Object.values(toolCallsMap)
+        if (finishReason === 'tool_calls' && toolCalls.length > 0) {
+          // 显示"调用中"状态
+          chatStore.appendStreamContent(sid, `🔧 调用工具：${toolCalls.map(t => t.name).join('、')}…`)
+
+          // 并行执行所有工具
+          const results = await Promise.all(toolCalls.map(tc => runTool(tc, mcpStore)))
+
+          // 执行完毕后更新状态行，附带引擎 / 结果条数等信息
+          const statusLines = results.map((r, i) => {
+            const name = toolCalls[i].name
+            if (name === 'web_search') {
+              // 从结果头部提取引擎名："> 🔍 搜索引擎：**Tavily**　共 N 条结果"
+              const m = r.content.match(/搜索引擎：\*\*([^*]+)\*\*.*?(\d+)\s*条/)
+              return m ? `🔍 web_search · ${m[1]} · ${m[2]} 条结果 ✓` : `🔧 ${name} ✓`
             }
-          } catch {}
+            return `🔧 ${name} ✓`
+          })
+          chatStore.appendStreamContent(sid, statusLines.join('\n'))
+
+          // 将 tool_calls + tool 结果追加到消息链，进入下一轮
+          messages = [
+            ...messages,
+            {
+              role: 'assistant',
+              content: null,
+              tool_calls: toolCalls.map(tc => ({
+                id: tc.id, type: 'function',
+                function: { name: tc.name, arguments: tc.arguments },
+              })),
+            },
+            ...results.map(r => ({ role: 'tool', tool_call_id: r.id, content: r.content })),
+          ]
+        }
+        else {
+          finalText = chunkText
+          continueLoop = false
         }
       }
 
-      // 流式结束：一次性持久化最终状态
       await chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
-        msg.content = fullText || '(空响应)'
+        msg.content = finalText || '(空响应)'
         msg.streaming = false
       })
 
-      // Auto-generate title for new sessions
-      if (session.messages.length <= 3 && configStore.autoGenerateTitle) {
+      if (session.messages.length <= 3 && configStore.autoGenerateTitle)
         generateTitle(sid, content)
-      }
-    } catch (e: any) {
+    }
+    catch (e: any) {
       if (e.name === 'AbortError') {
-        await chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
-          msg.streaming = false
-        })
-      } else {
+        await chatStore.updateLastMessage(sid, (msg: ChatMessage) => { msg.streaming = false })
+      }
+      else {
         await chatStore.updateLastMessage(sid, (msg: ChatMessage) => {
           msg.content = `❌ ${e.message}`
           msg.isError = true
           msg.streaming = false
         })
       }
-    } finally {
+    }
+    finally {
       isGenerating.value = false
       chatStore.isGenerating = false
       abortController = null
     }
-  }
-
-  function stopGenerating() {
-    abortController?.abort()
   }
 
   async function generateTitle(sessionId: string, firstMessage: string) {
@@ -160,10 +215,33 @@ export function useChat() {
     } catch {}
   }
 
+  function stopGenerating() {
+    abortController?.abort()
+  }
+
   return { sendMessage, stopGenerating, isGenerating }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** 执行单个工具调用，返回结果文本 */
+async function runTool(tc: ToolCallAcc, mcpStore: ReturnType<typeof useMcpStore>): Promise<{ id: string; content: string }> {
+  const tool = mcpStore.tools.find(t => t.name === tc.name)
+  const server = tool ? mcpStore.servers.find(s => s.id === tool.serverId && s.enabled) : null
+  if (!server) return { id: tc.id, content: `工具 "${tc.name}" 不可用` }
+  try {
+    const args = JSON.parse(tc.arguments || '{}')
+    const resp = await $fetch<any>(server.url, {
+      method: 'POST',
+      body: { jsonrpc: '2.0', method: 'tools/call', params: { name: tc.name, arguments: args }, id: Date.now() },
+    })
+    const text = (resp?.result?.content ?? []).map((c: any) => c.text).join('\n')
+    return { id: tc.id, content: text || '（无返回内容）' }
+  }
+  catch (e: any) {
+    return { id: tc.id, content: `工具执行失败：${e.message}` }
+  }
+}
 
 /**
  * 所有 OpenAI 兼容协议的 Provider 统一走 /api/openai/ 代理，
