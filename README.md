@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 NuxtChat
+# 🤖 kfm_NuxtChat
 
 **基于 Vue 3 + Nuxt 4 完整复刻的 NextChat**
 
@@ -20,7 +20,7 @@
 
 ## 项目简介
 
-NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextWeb/NextChat) 的完整 Vue 3 技术栈复刻，功能完全对齐，并在存储、状态管理、样式方案上进行了 Vue 生态本地化适配。
+kfm_NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextWeb/NextChat) 的完整 Vue 3 技术栈复刻，功能完全对齐，并在存储、状态管理、样式方案上进行了 Vue 生态本地化适配。
 
 - **渲染模式**：纯客户端渲染（`ssr: false`），避免 IndexedDB 水合不匹配，首屏数据即时可用
 - **存储层**：IndexedDB（`idb-keyval`）+ 串行写队列，本地优先，数据不经任何服务器
@@ -68,8 +68,8 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 
 ### MCP（Model Context Protocol）
 - ✅ **内置 MCP 服务器**（JSON-RPC 2.0 over HTTP，零配置可用）
-- ✅ 内置工具：当前时间、数学计算、随机数、**实时网络搜索**
-- ✅ 实时网络搜索：支持 Tavily / Serper / Brave / DuckDuckGo 四级降级
+- ✅ **6 个内置工具**：当前时间、数学计算、随机数、实时搜索、**实时天气**、**网页抓取**
+- ✅ 实时网络搜索：支持 Tavily / Serper / Brave / DuckDuckGo 四级降级，结果附带引擎来源标注
 - ✅ 自定义外部 MCP 服务器（SSE / stdio 协议）
 - ✅ 工具自动发现（initialize → tools/list）
 - ✅ 递归工具调用（while 循环驱动，支持多轮工具链）
@@ -101,6 +101,7 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 
 ### 界面 & 体验
 - ✅ 深色 / 浅色 / 跟随系统三种主题（持久化到 IndexedDB）
+- ✅ **界面配色自定义**：侧边栏、历史记录高亮、主对话区、用户气泡（背景+字体）、助理气泡（背景+字体）7 项独立可配，一键恢复默认
 - ✅ **移动端完整适配**：抽屉式侧边栏、顶部导航栏、Safe Area 刘海屏适配、触摸友好按钮
 - ✅ 响应式布局（桌面 / 平板 / 手机）
 - ✅ 中文 / English 双语（`@nuxtjs/i18n`）
@@ -240,6 +241,7 @@ kfm_nuxtchat_v2/
 │   │   └── sd.vue              # Stable Diffusion
 │   ├── components/
 │   │   ├── AppSidebar.vue          # 侧边栏（桌面/移动端复用）
+│   │   ├── AppLogo.vue             # 品牌 Logo 组件（kfm_NuxtChat，支持 sm/md/lg 尺寸）
 │   │   ├── ui/                     # 基础组件（Modal / Icon / Toast …）
 │   │   ├── chat/                   # 聊天组件（View / Input / Message / ModelSelector）
 │   │   ├── markdown/               # Markdown 渲染器（含 KaTeX / Mermaid）
@@ -309,12 +311,13 @@ kfm_nuxtchat_v2/
 | DB Key | 内容 |
 |--------|------|
 | `chat-store` | 所有会话列表 + 消息记录 |
-| `config-store` | 模型配置、主题、字体大小等 UI 设置 |
+| `config-store` | 模型配置、主题、字体大小、**自定义配色**（7 项） |
 | `access-store` | API Key、访问密码、Ollama 地址 |
 | `mask-store` | 提示词 Mask 模板 |
 | `plugin-store` | 插件列表 |
 | `prompt-store` | 提示词库 |
 | `sync-store` | WebDAV 同步配置 |
+| `mcp-store` | MCP 服务器列表、工具缓存、启用状态 |
 
 **数据流转：** 页面加载时由 `plugins/store-init.client.ts` 从 IndexedDB 读取所有 Store 注入 Pinia；每次状态变更调用各 Store 的 `save()` 写回 IndexedDB。
 
@@ -340,14 +343,16 @@ kfm_nuxtchat_v2/
 - **递归调用**：while 循环驱动，支持 LLM 在一次对话中多轮调用不同工具
 - **Provider 兼容**：仅对 OpenAI 兼容 Provider 注入 tools，Anthropic / Google 自动跳过
 
-### 内置工具
+### 内置工具（6 个，零配置可用）
 
-| 工具名 | 功能 | 参数 |
-|--------|------|------|
-| `get_current_datetime` | 获取服务器当前时间 | `timezone`（可选，默认 Asia/Shanghai） |
-| `calculate` | 计算数学表达式 | `expression`（如 `2 + 3 * 4`） |
-| `get_random_number` | 生成指定范围随机整数 | `min`、`max` |
-| `web_search` | 实时网络搜索 | `query`、`count`（1-10，默认 5） |
+| 工具名 | 功能 | 参数 | 依赖 |
+|--------|------|------|------|
+| `get_current_datetime` | 获取服务器当前时间 | `timezone`（可选，默认 Asia/Shanghai） | 无 |
+| `calculate` | 计算数学表达式（安全求值，不使用 eval） | `expression`（如 `(10+5)*2`） | 无 |
+| `get_random_number` | 生成指定范围随机整数 | `min`、`max` | 无 |
+| `web_search` | 实时网络搜索，返回标题 + 链接 + 摘要 | `query`、`count`（1-10，默认 5） | 可选 API Key（见搜索方案） |
+| `get_weather` | 获取城市实时天气（温度、湿度、风速等） | `city`（支持中英文） | 无（wttr.in 免费接口） |
+| `fetch_url` | 抓取网页正文并返回纯文本 | `url`、`max_length`（默认 3000，最大 8000） | 无 |
 
 ### 实时搜索方案
 
@@ -367,6 +372,8 @@ kfm_nuxtchat_v2/
 
 **搜索结果格式**（返回给 LLM 的文本示例）：
 ```
+> 🔍 搜索引擎：**Tavily**　共 5 条结果
+
 **1. 标题**
 🔗 https://example.com
 摘要内容...
@@ -375,6 +382,8 @@ kfm_nuxtchat_v2/
 ...
 ```
 
+> 对话气泡中会同步显示 `🔍 web_search · Tavily · 5 条结果 ✓`，让用户直观看到使用了哪个引擎。
+
 ### 添加自定义 MCP 服务器
 
 在 MCP 工具市场页面点击「添加服务器」，填写：
@@ -382,7 +391,7 @@ kfm_nuxtchat_v2/
 - **URL**：MCP 服务器地址（如 `https://mcp.example.com/api/mcp`）
 - **类型**：SSE（通过 HTTP）
 
-启用开关后，NuxtChat 会自动执行 `initialize` + `tools/list`，发现并注册该服务器提供的所有工具。
+启用开关后，kfm_NuxtChat 会自动执行 `initialize` + `tools/list`，发现并注册该服务器提供的所有工具。
 
 ---
 
@@ -451,7 +460,7 @@ bun .output/server/index.mjs
 
 ## 与 NextChat 的对应关系
 
-| NextChat 技术 | NuxtChat 对应技术 |
+| NextChat 技术 | kfm_NuxtChat 对应技术 |
 |--------------|-----------------|
 | Next.js 14 App Router | Nuxt 4 + Vue 3 |
 | Zustand + persist | Pinia + idb-keyval |
@@ -475,4 +484,4 @@ bun .output/server/index.mjs
 
 ## License
 
-MIT © 2026 NuxtChat
+MIT © 2026 kfm_NuxtChat

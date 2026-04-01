@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useConfigStore } from '~/stores/config'
+import { useConfigStore, DEFAULT_COLORS_LIGHT, DEFAULT_COLORS_DARK } from '~/stores/config'
 import { useAccessStore } from '~/stores/access'
 import { useSyncStore } from '~/stores/sync'
 import type { ThemeMode } from '~/utils/types'
@@ -31,6 +31,35 @@ const themes: Array<{ value: ThemeMode; label: string; icon: string }> = [
 ]
 
 function setTheme(theme: ThemeMode) { configStore.setTheme(theme) }
+
+// 配色：当前实际生效的色值（优先用自定义，否则用主题默认）
+const defaultColors = computed(() =>
+  configStore.isDark ? DEFAULT_COLORS_DARK : DEFAULT_COLORS_LIGHT,
+)
+
+const colorItems = computed(() => [
+  { key: 'sidebar' as const,              label: '侧边栏背景',     desc: '左侧导航区底色' },
+  { key: 'chatHistory' as const,          label: '历史记录高亮',   desc: '选中的对话条目颜色' },
+  { key: 'chatArea' as const,             label: '主对话区背景',   desc: '消息列表区域底色' },
+  { key: 'userBubble' as const,           label: '用户气泡背景',   desc: '你发送的消息气泡底色' },
+  { key: 'userBubbleText' as const,       label: '用户气泡字体',   desc: '你发送的消息文字颜色' },
+  { key: 'assistantBubble' as const,      label: '助理气泡背景',   desc: 'AI 回复的气泡底色' },
+  { key: 'assistantBubbleText' as const,  label: '助理气泡字体',   desc: 'AI 回复的文字颜色' },
+])
+
+type ColorKey = keyof typeof configStore.customColors
+
+function getColor(key: ColorKey): string {
+  return configStore.customColors[key] || defaultColors.value[key]
+}
+
+function setColor(key: ColorKey, val: string) {
+  configStore.setCustomColors({ [key]: val })
+}
+
+const hasCustomColors = computed(() =>
+  Object.values(configStore.customColors).some(v => v !== ''),
+)
 
 const syncStatus = ref<'idle' | 'loading' | 'ok' | 'error'>('idle')
 
@@ -92,6 +121,53 @@ async function syncFromWebDAV() {
                 >
                   <AppIcon :name="t.icon" :size="12" /> {{ t.label }}
                 </button>
+              </div>
+            </div>
+
+            <!-- Color scheme -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-medium text-(--color-text-secondary)">界面配色</label>
+                <button
+                  v-if="hasCustomColors"
+                  class="text-xs text-(--color-primary) hover:underline flex items-center gap-1"
+                  @click="configStore.resetColors()"
+                >
+                  <AppIcon name="rotate-ccw" :size="11" />恢复默认
+                </button>
+              </div>
+              <div class="flex flex-col gap-2">
+                <div
+                  v-for="item in colorItems" :key="item.key"
+                  class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-(--color-bg-secondary)"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-(--color-text)">{{ item.label }}</p>
+                    <p class="text-xs text-(--color-text-muted)">{{ item.desc }}</p>
+                  </div>
+                  <label class="relative flex items-center gap-2 cursor-pointer shrink-0">
+                    <!-- 色块预览 -->
+                    <span
+                      class="w-8 h-8 rounded-lg border-2 border-(--color-border) shadow-sm transition-transform hover:scale-110"
+                      :style="{ background: getColor(item.key) }"
+                    />
+                    <input
+                      type="color"
+                      :value="getColor(item.key)"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      @input="setColor(item.key, ($event.target as HTMLInputElement).value)"
+                    />
+                  </label>
+                  <!-- 单项重置 -->
+                  <button
+                    v-if="configStore.customColors[item.key]"
+                    class="text-(--color-text-muted) hover:text-(--color-danger) transition-colors"
+                    title="重置此项"
+                    @click="setColor(item.key, '')"
+                  >
+                    <AppIcon name="x" :size="13" />
+                  </button>
+                </div>
               </div>
             </div>
 

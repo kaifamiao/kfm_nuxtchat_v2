@@ -28,7 +28,8 @@ export default defineNuxtPlugin(async () => {
     mcpStore.load(),
   ])
 
-  // 加载完成后立即应用主题和字体大小
+  // 加载完成后立即应用主题、字体大小、自定义配色
   configStore.setTheme(configStore.theme)
   configStore.setFontSize(configStore.fontSize)
+  configStore.setCustomColors(configStore.customColors)
 })

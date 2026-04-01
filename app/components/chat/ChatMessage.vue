@@ -77,11 +77,12 @@ async function copy() {
       <div
         class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
         :class="[
-          isUser
-            ? 'bg-(--color-primary) text-white rounded-tr-sm'
-            : 'bg-(--color-assistant-bubble) text-(--color-text) rounded-tl-sm',
+          isUser ? 'rounded-tr-sm' : 'rounded-tl-sm',
           message.isError ? 'border border-red-300' : '',
         ]"
+        :style="isUser
+          ? { background: 'var(--color-user-bubble)', color: 'var(--color-user-bubble-text)' }
+          : { background: 'var(--color-assistant-bubble)', color: 'var(--color-assistant-bubble-text)' }"
       >
         <!-- 图片附件（多模态消息） -->
         <div
