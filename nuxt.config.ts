@@ -5,6 +5,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  // 纯客户端渲染：聊天数据全部存在 IndexedDB，SSR 只会产生水合不匹配
+  ssr: false,
+
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/i18n',

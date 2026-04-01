@@ -62,7 +62,7 @@ function formatTime(ms: number) {
 
     <!-- Search -->
     <div class="px-3 pb-2">
-      <div class="sidebar-search-box flex items-center gap-2 px-3 h-8 rounded-lg">
+      <div class="sidebar-search-box flex items-center gap-2 px-3 h-8">
         <AppIcon name="prompt" :size="12" class="sidebar-text-muted" />
         <input
           v-model="searchText"
@@ -77,12 +77,12 @@ function formatTime(ms: number) {
       <div
         v-for="session in filteredSessions"
         :key="session.id"
-        class="session-item group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer mb-0.5"
+        class="session-item group flex items-start gap-2 px-3 py-2.5 cursor-pointer mb-0.5"
         :class="{ 'is-active': session.id === chatStore.currentSessionId }"
         @click="selectSession(session.id)"
       >
         <!-- Avatar -->
-        <div class="session-avatar w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+        <div class="session-avatar w-7 h-7 flex items-center justify-center shrink-0 mt-0.5">
           <AppIcon :name="session.mask.avatar" :size="14" class="text-primary" />
         </div>
 
@@ -102,7 +102,7 @@ function formatTime(ms: number) {
 
         <!-- Delete -->
         <button
-          class="delete-btn opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-md transition-opacity shrink-0"
+          class="delete-btn opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center transition-opacity shrink-0"
           @click.stop="deleteSession(session.id, $event)"
         >
           <AppIcon name="delete" :size="12" />
@@ -140,62 +140,60 @@ function formatTime(ms: number) {
 }
 
 /* ── 分割线 ── */
-.sidebar-header {
-  border-bottom: 1px solid var(--color-sidebar-border);
-}
-.sidebar-footer {
-  border-top: 1px solid var(--color-sidebar-border);
-}
+.sidebar-header { border-bottom: 1px solid var(--color-sidebar-border); }
+.sidebar-footer  { border-top:    1px solid var(--color-sidebar-border); }
 
 /* ── 文字颜色 ── */
-.sidebar-text        { color: var(--color-sidebar-text); }
-.sidebar-text-sub    { color: var(--color-sidebar-text-sub); }
-.sidebar-text-muted  { color: var(--color-sidebar-text-muted); }
-.text-primary        { color: var(--color-primary); }
+.sidebar-text       { color: var(--color-sidebar-text); }
+.sidebar-text-sub   { color: var(--color-sidebar-text-sub); }
+.sidebar-text-muted { color: var(--color-sidebar-text-muted); }
+.text-primary       { color: var(--color-primary); }
 
 /* ── 搜索框 ── */
-.sidebar-search-box { background: var(--color-sidebar-hover); }
-.sidebar-search-input { color: var(--color-sidebar-text); caret-color: var(--color-primary); }
+.sidebar-search-box {
+  background:    var(--color-sidebar-hover);
+  border-radius: var(--app-radius-md);
+}
+.sidebar-search-input {
+  color:        var(--color-sidebar-text);
+  caret-color:  var(--color-primary);
+}
 .sidebar-search-input::placeholder { color: var(--color-sidebar-text-muted); }
 
 /* ── 图标按钮（顶部新建 & 底部导航） ── */
 .sidebar-icon-btn {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
+  width:          2rem;
+  height:         2rem;
+  display:        flex;
+  align-items:    center;
   justify-content: center;
-  border-radius: 8px;
-  color: var(--color-sidebar-icon);
-  transition: background 0.15s ease;
+  border-radius:  var(--app-radius-md);
+  color:          var(--color-sidebar-icon);
+  transition:     background 0.15s ease;
 }
-.sidebar-icon-btn:hover {
-  background: var(--color-sidebar-hover);
-}
+.sidebar-icon-btn:hover { background: var(--color-sidebar-hover); }
 
 /* ── 会话列表项 ── */
 .session-item {
-  border-radius: 8px;
-  transition: background 0.15s ease;
+  border-radius: var(--app-radius-md);
+  transition:    background 0.15s ease;
 }
-.session-item:hover {
-  background: var(--color-sidebar-hover);
-}
-.session-item.is-active {
-  background: var(--color-sidebar-active);
-}
+.session-item:hover    { background: var(--color-sidebar-hover); }
+.session-item.is-active { background: var(--color-sidebar-active); }
 
 /* ── 会话 avatar 背景 ── */
 .session-avatar {
-  background: var(--color-primary-light);
+  background:    var(--color-primary-light);
+  border-radius: var(--app-radius-sm);
 }
 
 /* ── 删除按钮 ── */
 .delete-btn {
-  color: var(--color-sidebar-text-muted);
+  border-radius: var(--app-radius-sm);
+  color:         var(--color-sidebar-text-muted);
 }
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color:      #ef4444;
 }
 </style>

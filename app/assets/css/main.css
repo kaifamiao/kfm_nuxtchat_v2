@@ -33,12 +33,6 @@
   --color-warning: #f59e0b;
   --color-success: #22c55e;
 
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
-
   --sidebar-width: 260px;
   --header-height: 52px;
   --input-height: 52px;
@@ -71,6 +65,16 @@
   --color-border-dark: #555555;
 
   --color-assistant-bubble: #2f2f2f;
+}
+
+/* ── 自定义圆角变量（不放在 @theme，避免覆盖 Tailwind 内置 rounded-* 工具类） ── */
+:root {
+  --app-radius-xs:   4px;
+  --app-radius-sm:   6px;
+  --app-radius-md:   8px;
+  --app-radius-lg:  12px;
+  --app-radius-xl:  16px;
+  --app-radius-full: 9999px;
 }
 
 /* Base resets */
