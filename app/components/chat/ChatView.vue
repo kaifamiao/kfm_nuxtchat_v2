@@ -2,14 +2,17 @@
 import { useChatStore } from '~/stores/chat'
 import { useConfigStore } from '~/stores/config'
 import { useChat } from '~/composables/useChat'
+import { copyToClipboard, getMessageText } from '~/utils/common'
 
 const chatStore = useChatStore()
 const configStore = useConfigStore()
 const { sendMessage, stopGenerating, isGenerating } = useChat()
 
 const messagesEndRef = ref<HTMLDivElement>()
+const toastRef = ref<{ success: (m: string) => void; error: (m: string) => void } | null>(null)
 const showClearConfirm = ref(false)
 const showModelSelector = ref(false)
+const showExporter = ref(false)
 
 const session = computed(() => chatStore.currentSession)
 const messages = computed(() => session.value?.messages ?? [])
@@ -31,7 +34,6 @@ function handleRetry() {
   if (!msgs.length) return
   const lastUser = [...msgs].reverse().find(m => m.role === 'user')
   if (!lastUser) return
-  // Remove the last assistant message and resend
   const lastMsg = msgs[msgs.length - 1]
   if (lastMsg.role === 'assistant') {
     chatStore.deleteMessage(chatStore.currentSessionId, lastMsg.id)
@@ -46,6 +48,32 @@ function handleDeleteMessage(messageId: string) {
 function clearMessages() {
   chatStore.clearMessages(chatStore.currentSessionId)
   showClearConfirm.value = false
+}
+
+// ── 分享：复制对话内容到剪贴板 ────────────────────────────────────────────────
+async function shareConversation() {
+  if (!session.value || !messages.value.length) {
+    toastRef.value?.error('当前没有可分享的对话内容')
+    return
+  }
+  const lines: string[] = [
+    `📝 ${session.value.topic}`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    '',
+  ]
+  for (const msg of messages.value) {
+    const role = msg.role === 'user' ? '👤 用户' : '🤖 助手'
+    const text = getMessageText(msg.content)
+    lines.push(`${role}：`, text, '')
+  }
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━`)
+  lines.push(`由 NuxtChat 分享 · ${new Date().toLocaleString('zh-CN')}`)
+  try {
+    await copyToClipboard(lines.join('\n'))
+    toastRef.value?.success('已复制到剪贴板，可直接粘贴分享')
+  } catch {
+    toastRef.value?.error('复制失败，请手动复制')
+  }
 }
 </script>
 
@@ -81,12 +109,22 @@ function clearMessages() {
         <AppIcon name="clear" :size="16" class="text-(--color-text-muted)" />
       </button>
 
-      <!-- Export -->
+      <!-- Share：复制对话到剪贴板 -->
+      <button
+        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
+        title="分享对话（复制到剪贴板）"
+        @click="shareConversation"
+      >
+        <AppIcon name="share" :size="16" class="text-(--color-text-muted)" />
+      </button>
+
+      <!-- Export：下载文件 -->
       <button
         class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--color-bg-secondary) transition-colors"
         title="导出对话"
+        @click="showExporter = true"
       >
-        <AppIcon name="export" :size="16" class="text-(--color-text-muted)" />
+        <AppIcon name="download" :size="16" class="text-(--color-text-muted)" />
       </button>
     </div>
 
@@ -133,5 +171,18 @@ function clearMessages() {
 
     <!-- Model Selector Modal -->
     <ModelSelector v-model="showModelSelector" />
+
+    <!-- Export Modal -->
+    <AppModal
+      v-model="showExporter"
+      title="导出对话"
+      width="360px"
+      :footer="false"
+    >
+      <ConversationExporter @close="showExporter = false" />
+    </AppModal>
+
+    <!-- Local Toast（分享复制反馈） -->
+    <AppToast ref="toastRef" />
   </div>
 </template>
