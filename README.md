@@ -2,7 +2,7 @@
 
 # 🤖 NuxtChat
 
-**基于 Vue3 + Nuxt4 完整复刻的 NextChat**
+**基于 Vue 3 + Nuxt 4 完整复刻的 NextChat**
 
 一个轻量、快速、隐私优先的多模型 AI 聊天客户端
 
@@ -20,13 +20,14 @@
 
 ## 项目简介
 
-NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextWeb/NextChat) 的完整 Vue3 技术栈复刻，功能完全对齐，并在存储、状态管理、样式方案上进行了 Vue 生态本地化适配。
+NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextWeb/NextChat) 的完整 Vue 3 技术栈复刻，功能完全对齐，并在存储、状态管理、样式方案上进行了 Vue 生态本地化适配。
 
-- **存储层**：IndexedDB（`idb-keyval`）本地优先，数据不经任何服务器
-- **状态管理**：Pinia（10 个 Store，对话/配置/模型选择/主题等全量托管）
-- **样式**：Tailwind CSS v4 + CSS 自定义属性（零 UI 框架依赖）
-- **图标**：统一使用 [Lucide](https://lucide.dev)（`lucide-vue-next`），通过 `AppIcon` 统一封装，支持旧式别名向后兼容
-- **API 安全**：Nuxt Server Routes 服务端代理，API Key 永不暴露给浏览器
+- **渲染模式**：纯客户端渲染（`ssr: false`），避免 IndexedDB 水合不匹配，首屏数据即时可用
+- **存储层**：IndexedDB（`idb-keyval`）+ 串行写队列，本地优先，数据不经任何服务器
+- **状态管理**：Pinia（10 个 Store，对话 / 配置 / 模型 / 主题等全量托管）
+- **样式**：Tailwind CSS v4（CSS-first 配置）+ CSS 自定义属性，零 UI 框架依赖
+- **图标**：统一使用 [Lucide](https://lucide.dev)（`lucide-vue-next`），通过 `AppIcon` 封装并支持别名向后兼容
+- **API 安全**：Nuxt Server Routes（Nitro）服务端代理，API Key 永不暴露给浏览器
 
 ---
 
@@ -40,17 +41,20 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 - ✅ 自动生成对话标题
 - ✅ 发送快捷键可选（Enter / Shift+Enter）
 
-### 多模型支持（14+ 提供商）
+### 多模型支持（15+ 提供商）
 
-| 国际提供商 | 国内提供商 |
-|-----------|-----------|
-| OpenAI / Azure OpenAI | 百度文心一言 |
-| Anthropic Claude | 阿里通义千问 |
-| Google Gemini | 智谱 ChatGLM |
-| xAI Grok | 字节豆包 |
-| Stability AI | 讯飞星火 |
-| 302.AI | DeepSeek / Moonshot |
-| SiliconFlow | — |
+| 国际提供商 | 国内提供商 | 本地部署 |
+|-----------|-----------|---------|
+| OpenAI / Azure OpenAI | DeepSeek | **Ollama**（动态拉取模型列表） |
+| Anthropic Claude | Moonshot（Kimi） | — |
+| Google Gemini | 阿里通义千问 | — |
+| xAI Grok | 智谱 ChatGLM | — |
+| Stability AI | 字节豆包 | — |
+| 302.AI | SiliconFlow | — |
+
+**DeepSeek 双优先级代理**：优先走官方 API，5xx / 网络故障时自动降级到用户配置的自定义中转地址，4xx（Key 无效 / 余额不足）直接报错不重试。
+
+**Ollama 本地模型**：启动 `OLLAMA_ORIGINS=* ollama serve` 后，在模型选择器中实时拉取已安装模型列表，无需 API Key。
 
 ### 提示词 & Mask 系统
 - ✅ 内置 5 个角色模板（AI 助手、代码专家、写作助手、翻译专家、学术助手）
@@ -87,12 +91,17 @@ NuxtChat 是对 [NextChat（ChatGPT Next Web）](https://github.com/ChatGPTNextW
 - ✅ 导出对话为 **Markdown / JSON / 纯文本**
 - ✅ 全量 IndexedDB 数据备份与恢复
 
+### 对话操作
+- ✅ **分享对话**：一键复制全部对话内容到剪贴板（格式化文本）
+- ✅ **导出对话**：下载为 Markdown / JSON / 纯文本三种格式
+
 ### 界面 & 体验
-- ✅ 深色 / 浅色 / 跟随系统三种主题（Pinia 持久化）
-- ✅ 响应式设计（桌面 + 移动端自适应）
+- ✅ 深色 / 浅色 / 跟随系统三种主题（持久化到 IndexedDB）
+- ✅ **移动端完整适配**：抽屉式侧边栏、顶部导航栏、Safe Area 刘海屏适配、触摸友好按钮
+- ✅ 响应式布局（桌面 / 平板 / 手机）
 - ✅ 中文 / English 双语（`@nuxtjs/i18n`）
-- ✅ 字体大小自定义
-- ✅ SSR（服务端渲染）
+- ✅ 字体大小自定义（作用于 `<html>` 根元素，Tailwind `rem` 单位全局缩放）
+- ✅ 纯客户端渲染（`ssr: false`），无水合不匹配问题
 
 ---
 
@@ -182,9 +191,10 @@ ENABLE_MCP=true
 |------|------|------|
 | 前端框架 | Vue 3 + Nuxt 4 | `^4.4.2` |
 | 语言 | TypeScript | 内置 |
+| 渲染模式 | 纯客户端渲染（`ssr: false`） | — |
 | 状态管理 | Pinia + @pinia/nuxt | `^3.0` |
-| 样式 | Tailwind CSS v4 | `^4.2` |
-| 本地存储 | idb-keyval（IndexedDB） | `^6.2` |
+| 样式 | Tailwind CSS v4（CSS-first） | `^4.2` |
+| 本地存储 | idb-keyval（IndexedDB）+ 串行写队列 | `^6.2` |
 | Markdown | marked + highlight.js | `^17 / ^11` |
 | 安全渲染 | DOMPurify | `^3.3` |
 | 国际化 | @nuxtjs/i18n | `^10.2` |
@@ -192,6 +202,7 @@ ENABLE_MCP=true
 | 图标库 | lucide-vue-next | `^1.0` |
 | 数学公式 | marked-katex-extension | `^5.1` |
 | 流程图 | mermaid | `^11.13` |
+| 服务端路由 | Nitro（Nuxt 内置） | — |
 
 ### 目录结构
 
